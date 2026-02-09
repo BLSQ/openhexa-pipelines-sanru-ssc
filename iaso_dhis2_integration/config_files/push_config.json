@@ -1,0 +1,29 @@
+{
+    "SETTINGS":{
+        "TARGET_DHIS2_CONNECTION": "drc-prs",
+        "IMPORT_STRATEGY": "CREATE_AND_UPDATE",
+		"DRY_RUN": true,
+		"MAX_POST": 1000,
+		"PUSH_WAIT_MINUTES": 5
+    },        
+    "EXTRACTS": [
+        {              
+            "EXTRACT_UID": "iaso_1",
+            "SOURCE_DATASET_UID" : null,
+            "TARGET_DATASET_UID" : null,
+            "SYNC_PERIOD_WINDOW" : null,
+            "MAPPINGS": {
+                "MII": {
+                    "DX_UID": "cCwbPWGwPXr",
+                    "CATEGORY_OPTION_COMBO": "HllvX50cXC0",
+                    "ATTRIBUTE_OPTION_COMBO": "HllvX50cXC0"
+                },
+                "TDR": {
+                    "DX_UID": "VrW0MzIUuez",
+                    "CATEGORY_OPTION_COMBO": "HllvX50cXC0",
+                    "ATTRIBUTE_OPTION_COMBO": "HllvX50cXC0"
+                }
+            }
+        }
+    ]    
+}

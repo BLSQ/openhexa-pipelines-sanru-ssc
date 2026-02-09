@@ -6,25 +6,16 @@ from pathlib import Path
 
 import pandas as pd
 import polars as pl
-import requests
 from d2d_library.db_queue import Queue
-from d2d_library.dhis2_dataset_completion_handler import DatasetCompletionSync
-from d2d_library.dhis2_extract_handlers import DHIS2Extractor
-from d2d_library.dhis2_org_unit_aligner import DHIS2PyramidAligner
 from d2d_library.dhis2_pusher import DHIS2Pusher
 from dateutil.relativedelta import relativedelta
 from openhexa.sdk import current_run, parameter, pipeline, workspace
-from openhexa.toolbox.dhis2 import DHIS2
-from openhexa.toolbox.dhis2.dataframe import get_datasets
-from openhexa.toolbox.dhis2.periods import period_from_string
-from requests.exceptions import HTTPError, RequestException
 from utils import (
     configure_logging_flush,
     connect_to_dhis2,
     load_configuration,
     read_parquet_extract,
-    save_to_parquet,
-    select_descendants,
+    get_periods,
 )
 
 # Ticket(s) related to this pipeline:
@@ -69,13 +60,11 @@ def iaso_dhis2_integration(run_extract_data: bool, run_push_data: bool):
         extract_data(
             pipeline_path=pipeline_path,
             run_task=run_extract_data,
-            # wait=datasets_ready,
         )
 
-        push_ready = push_data(
+        push_data(
             pipeline_path=pipeline_path,
             run_task=run_push_data,
-            # wait=datasets_ready,
         )
 
     except Exception as e:
@@ -87,92 +76,24 @@ def iaso_dhis2_integration(run_extract_data: bool, run_push_data: bool):
 def extract_data(
     pipeline_path: Path,
     run_task: bool = True,
-    wait: bool = True,
 ):
     """Extracts data elements from the source DHIS2 instance and saves them in parquet format."""
     if not run_task:
-        current_run.log_info("Data elements extraction task skipped.")
+        current_run.log_info("Data extraction task skipped.")
         return
+    current_run.log_info("Data extraction task started.")
 
-    current_run.log_info("Data elements extraction task started.")
+    extract_config = load_configuration(config_path=pipeline_path / "configuration" / "extract_config.json")
+    iaso_client = connect_to_iaso_or_something(extract_config["SETTINGS"]["IASO_CONNECTION"])  # iaso CLIENT
 
-    # load configuration
-    extract_config = load_configuration(
-        config_path=pipeline_path / "configuration" / "extract_config.json"
-    )
-
-    # connect to source DHIS2 instance (No cache for data extraction)
-    dhis2_client = connect_to_dhis2(
-        connection_str=extract_config["SETTINGS"]["SOURCE_DHIS2_CONNECTION"],
-        cache_dir=None,
-    )
-
-    # NOTE: We need the filtered source pyramid to validate the org units (aligned org units).
-    source_pyramid = read_parquet_extract(
-        pipeline_path / "data" / "pyramid" / "pyramid_data.parquet"
-    )
-
-    # initialize queue
+    # initialize queue (always pointing to the same db file)
     db_path = pipeline_path / "configuration" / ".queue.db"
     push_queue = Queue(db_path)
 
-    try:
-        months_lag = extract_config["SETTINGS"].get(
-            "NUMBER_MONTHS_WINDOW", 3
-        )  # default 3 months window
-        if not extract_config["SETTINGS"]["STARTDATE"]:
-            start = (datetime.now() - relativedelta(months=months_lag)).strftime("%Y%m")
-        else:
-            start = extract_config["SETTINGS"]["STARTDATE"]
-        if not extract_config["SETTINGS"]["ENDDATE"]:
-            end = (datetime.now() - relativedelta(months=1)).strftime(
-                "%Y%m"
-            )  # go back 1 month.
-        else:
-            end = extract_config["SETTINGS"]["ENDDATE"]
-    except Exception as e:
-        raise Exception(f"Error in start/end date configuration: {e}") from e
-
-    # limits
-    dhis2_client.data_value_sets.MAX_DATA_ELEMENTS = 100
-    dhis2_client.data_value_sets.MAX_ORG_UNITS = 100
-
-    try:
-        # Get periods
-        start_period = period_from_string(start)
-        end_period = period_from_string(end)
-        extract_periods = (
-            [str(p) for p in start_period.get_range(end_period)]
-            if str(start_period) < str(end_period)
-            else [str(start_period)]
-        )
-    except Exception as e:
-        raise Exception(f"Error in start/end date configuration: {e!s}") from e
-
-    download_settings = extract_config["SETTINGS"].get("MODE", None)
-    if download_settings is None:
-        download_settings = "DOWNLOAD_REPLACE"
-        current_run.log_warning(
-            f"No 'MODE' found in extraction settings. Set default: {download_settings}"
-        )
-
-    # Setup extractor
-    # See docs about return_existing_file impact.
-    dhis2_extractor = DHIS2Extractor(
-        dhis2_client=dhis2_client,
-        download_mode=download_settings,
-        return_existing_file=False,
-    )
-
-    current_run.log_info(
-        f"Download MODE: {extract_config['SETTINGS']['MODE']} from: {start} to {end}"
-    )
-    handle_data_element_extracts(
+    handle_iaso_extracts(
         pipeline_path=pipeline_path,
-        dhis2_extractor=dhis2_extractor,
-        data_element_extracts=extract_config["DATA_ELEMENTS"].get("EXTRACTS", []),
-        source_pyramid=source_pyramid,
-        extract_periods=extract_periods,
+        iaso_client=iaso_client,
+        extract_configurations=extract_config["DATA_ELEMENTS"].get("EXTRACTS", []),
         push_queue=push_queue,
     )
 
@@ -181,15 +102,8 @@ def extract_data(
 def push_data(
     pipeline_path: Path,
     run_task: bool = True,
-    wait: bool = True,
-) -> bool:
-    """Pushes data elements to the target DHIS2 instance.
-
-    Returns
-    -------
-    bool
-        True: This is just a dummy flag to indicate the data push task is done.
-    """
+) -> None:
+    """Pushes data elements to the target DHIS2 instance."""
     if not run_task:
         current_run.log_info("Data push task skipped.")
         return True
@@ -200,9 +114,7 @@ def push_data(
     logger, logs_file = configure_logging_flush(
         logs_path=Path("/home/jovyan/tmp/logs"), task_name="push_data"
     )
-    config = load_configuration(
-        config_path=pipeline_path / "configuration" / "push_config.json"
-    )
+    config = load_configuration(config_path=pipeline_path / "configuration" / "push_config.json")
     target_dhis2 = connect_to_dhis2(
         connection_str=config["SETTINGS"]["TARGET_DHIS2_CONNECTION"], cache_dir=None
     )
@@ -216,11 +128,10 @@ def push_data(
     push_wait = config["SETTINGS"].get("PUSH_WAIT_MINUTES", 5)
 
     # log parameters
-    logger.info(
-        f"Import strategy: {import_strategy} - Dry Run: {dry_run} - Max Post elements: {max_post}"
-    )
+    logger.info(f"Import strategy: {import_strategy} - Dry Run: {dry_run} - Max Post elements: {max_post}")
     current_run.log_info(
-        f"Pushing data with parameters import_strategy: {import_strategy}, dry_run: {dry_run}, max_post: {max_post}"
+        f"Pushing data with parameters import_strategy: {import_strategy}, "
+        f"dry_run: {dry_run}, max_post: {max_post}"
     )
 
     # Set up DHIS2 pusher
@@ -231,14 +142,6 @@ def push_data(
         max_post=max_post,
         logger=logger,
     )
-
-    # Map data types to their respective mapping functions
-    dispatch_map = {
-        "DATA_ELEMENT": (
-            config["DATA_ELEMENTS"]["EXTRACTS"],
-            apply_data_element_extract_config,
-        ),
-    }
 
     # loop over the queue
     while True:
@@ -258,52 +161,33 @@ def push_data(
             extract_path = Path(extract_file_path)
             extract_data = read_parquet_extract(parquet_file=extract_path)
         except Exception as e:
-            current_run.log_error(
-                f"Failed to read extract from queue item: {next_extract}. Error: {e}"
-            )
+            current_run.log_error(f"Failed to read extract from queue item: {next_extract}. Error: {e}")
             push_queue.dequeue()  # remove problematic item
             continue
 
         try:
-            # Determine data type
-            data_type = extract_data["DATA_TYPE"].unique()[0]
-            period = extract_data["PERIOD"].unique()[0]
+            current_run.log_info(f"Pushing data for extract {extract_id}: {extract_path.name}.")
 
-            current_run.log_info(
-                f"Pushing data for extract {extract_id}: {extract_path.name}."
-            )
-            if data_type not in dispatch_map:
-                current_run.log_warning(
-                    f"Unknown DATA_TYPE '{data_type}' in extract: {extract_path.name}. Skipping."
-                )
-                push_queue.dequeue()  # remove unknown item
-                continue
-
-            # Get config and mapping function
-            cfg_list, mapper_func = dispatch_map[data_type]
+            # Get corresponding config for extract and apply mapping and push data
             extract_config = next(
-                (e for e in cfg_list if e["EXTRACT_UID"] == extract_id), {}
+                (e for e in config["CMM_INDICATORS"]["EXTRACTS"] if e["EXTRACT_UID"] == extract_id),
+                {},
             )
-
-            # Apply mapping and push data
-            df_mapped: pd.DataFrame = mapper_func(
+            df_mapped: pd.DataFrame = apply_data_element_extract_config(
                 df=extract_data, extract_config=extract_config
             )
-            # df_mapped[[""]].drop_duplicates().head()
-            df_mapped = df_mapped.sort_values(
-                by="ORG_UNIT"
-            )  # speed up DHIS2 processing
+
+            # PUSH
             pusher.push_data(df_data=df_mapped)
 
             # Success → dequeue
             push_queue.dequeue()
-            current_run.log_info(
-                f"Data push finished for extract: {extract_path.name}."
-            )
+            current_run.log_info(f"Data push finished for extract: {extract_path.name}.")
 
         except Exception as e:
             current_run.log_error(
-                f"Fatal error for extract {extract_id} ({extract_path.name}), stopping push process. Error: {e!s}"
+                f"Fatal error for extract {extract_id} ({extract_path.name}),"
+                f" stopping push process. Error: {e!s}"
             )
             raise  # crash on error
 
@@ -320,39 +204,27 @@ def save_logs(logs_file: Path, output_dir: Path) -> None:
         shutil.copy(logs_file.as_posix(), dest_file.as_posix())
 
 
-def handle_data_element_extracts(
+def handle_iaso_extracts(
     pipeline_path: Path,
-    dhis2_extractor: DHIS2Extractor,
-    data_element_extracts: list,
-    source_pyramid: pd.DataFrame,
-    extract_periods: list[str],
+    # iaso_client: IASO client or something,
+    extract_configurations: list,
     push_queue: Queue,
 ):
     """Handles data elements extracts based on the configuration."""
-    if len(data_element_extracts) == 0:
-        current_run.log_info("No data elements to extract.")
-        return
-
     logger, logs_file = configure_logging_flush(
         logs_path=Path("/home/jovyan/tmp/logs"), task_name="extract_data"
     )
-    current_run.log_info("Starting data element extracts.")
+    current_run.log_info("Starting data extracts.")
     try:
         # loop over the available extract configurations
-        for idx, extract in enumerate(data_element_extracts):
+        for idx, extract in enumerate(extract_configurations):
             extract_id = extract.get("EXTRACT_UID")
-            org_units_level = extract.get("ORG_UNITS_LEVEL", None)
-            data_element_uids = extract.get("UIDS", [])
+            data_element_uids = extract.get("UIDS", [])  # not sure if relevant in our case, remove otherwise.
 
             if extract_id is None:
                 current_run.log_warning(
-                    f"No 'EXTRACT_UID' defined for extract position: {idx}. This is required, extract skipped."
-                )
-                continue
-
-            if org_units_level is None:
-                current_run.log_warning(
-                    f"No 'ORG_UNITS_LEVEL' defined for extract: {extract_id}, extract skipped."
+                    f"No 'EXTRACT_UID' defined for extract position: {idx}. "
+                    f"This is required, extract skipped."
                 )
                 continue
 
@@ -362,32 +234,36 @@ def handle_data_element_extracts(
                 )
                 continue
 
-            # get org units from the filtered pyramid
-            org_units = source_pyramid[source_pyramid["level"] == org_units_level][
-                "id"
-            ].to_list()
-            current_run.log_info(
-                f"Starting data elements extract ID: '{extract_id}' ({idx + 1}) "
-                f"with {len(data_element_uids)} data elements across {len(org_units)} org units "
-                f"(level {org_units_level})."
-            )
+            extract_mode = extract.get("MODE", "DOWNLOAD_REPLACE")
+
+            # resolve periods
+            start, end = resolve_extraction_window(extract)
+            extract_periods = get_periods(start, end)
+            current_run.log_info(f"Downloading with mode: {extract_mode} from: {start} to {end}")
 
             # run data elements extraction per period
             for period in extract_periods:
                 try:
-                    extract_path = dhis2_extractor.data_elements.download_period(
-                        data_elements=data_element_uids,
-                        org_units=org_units,
-                        period=period,
-                        output_dir=pipeline_path
-                        / "data"
-                        / "extracts"
-                        / "data_elements"
-                        / f"extract_{extract_id}",
-                    )
-                    if extract_path is not None:
-                        push_queue.enqueue(f"{extract_id}|{extract_path}")
+                    ## HERE WE SHOULD BE GETTING THE PATH TO THE EXTRACTED FILE FROM IASO
+                    ## THEN WE PUSH THIS PATH TO THE QUEUE TO BE PICKED UP BY THE PUSH TASK
 
+                    ## (!) HERE we can implement a DOWNLOAD MODE:
+                    ## IF mode == "DOWNLOAD_REPLACE": we download the extract and replace any existing file (same period).
+                    ## ELSE mode == "DOWNLOAD_NEW": we download only those extracts that do not yet exist.
+
+                    # EXAMPLE CODE:
+                    # extract_path = retrieve_extract(
+                    #     iaso_client=iaso_client,
+                    #     period=period,
+                    #     output_dir=pipeline_path / "data"/ "extracts"/ "data_elements"/ f"{extract_id}",
+                    # )
+
+                    # if extract_path is not None:
+                    # push_queue.enqueue(
+                    # f"{extract_id}|{extract_path}"
+                    # )  ## I SAVE THE EXTRACT UID WITH THE PATH 'ID|extract_path'
+
+                    pass  # remove this when the actual extraction code is uncommented
                 except Exception as e:
                     current_run.log_warning(
                         f"Extract {extract_id} download failed for period {period}, skipping to next extract."
@@ -402,12 +278,45 @@ def handle_data_element_extracts(
         save_logs(logs_file, output_dir=pipeline_path / "logs" / "extract")
 
 
+def resolve_extraction_window(settings: dict) -> tuple[str, str]:
+    """Returns (start_yyyymm, end_yyyymm) based on settings dict.
+
+    Returns
+    -------
+    tuple[str, str]
+        A tuple containing the start and end dates in 'YYYYMM' format.
+    """
+    months_lag = settings.get("NUMBER_MONTHS_WINDOW", 3)
+
+    if "START_PERIOD" in settings:
+        start = settings["START_PERIOD"]
+        _validate_yyyymm(start, "START_PERIOD")
+    else:
+        start = (datetime.now() - relativedelta(months=months_lag)).strftime("%Y%m")
+
+    if "END_PERIOD" in settings:
+        end = settings["END_PERIOD"]
+        _validate_yyyymm(end, "END_PERIOD")
+    else:
+        end = (datetime.now() - relativedelta(months=1)).strftime("%Y%m")
+
+    return start, end
+
+
+def _validate_yyyymm(value: str, field: str):
+    if not isinstance(value, str):
+        raise ValueError(f"{field} must be a string in YYYYMM format")
+
+    try:
+        datetime.strptime(value, "%Y%m")
+    except ValueError as e:
+        raise ValueError(f"{field} must be in YYYYMM format, got {value}") from e
+
+
 def apply_data_element_extract_config(
     df: pd.DataFrame, extract_config: dict, logger: logging.Logger | None = None
 ) -> pd.DataFrame:
-    """Applies data element mappings to the extracted data.
-
-    It also filters data elements based on category option combo (COC) if specified in the extract configuration.
+    """Applies data element mappings to the CMM indicators.
 
     Parameters
     ----------
@@ -424,85 +333,47 @@ def apply_data_element_extract_config(
         DataFrame with mapped data elements.
     """
     if len(extract_config) == 0:
-        current_run.log_warning(
-            "No extract details provided, skipping data element mappings."
-        )
+        current_run.log_warning("No extract details provided, skipping data element mappings.")
         return df
 
     extract_mappings = extract_config.get("MAPPINGS", {})
     if len(extract_mappings) == 0:
-        current_run.log_warning(
-            "No extract mappings provided, skipping data element mappings."
-        )
+        current_run.log_warning("No extract mappings provided, skipping data element mappings.")
         return df
 
     # Loop over the configured data element mappings to filter by COC/AOC if provided
-    current_run.log_info(
-        f"Applying data element mappings for extract: {extract_config.get('EXTRACT_UID')}."
-    )
+    current_run.log_info(f"Applying data element mappings for extract: {extract_config.get('EXTRACT_UID')}.")
     chunks = []
-    uid_mappings = {}
     for uid, mapping in extract_mappings.items():
-        uid_mapping = mapping.get("UID")
-        coc_mappings = mapping.get("CATEGORY_OPTION_COMBO", {})
-        aoc_mappings = mapping.get("ATTRIBUTE_OPTION_COMBO", {})
+        uid_mapping = mapping.get("DX_UID")
+        coc_mapping = mapping.get("CATEGORY_OPTION_COMBO")
+        aoc_mapping = mapping.get("ATTRIBUTE_OPTION_COMBO")
 
-        # Build a mask selection
-        df_uid = df[df["DX_UID"] == uid].copy()
-        if coc_mappings:
-            coc_mappings = {
-                k: v for k, v in coc_mappings.items() if v is not None
-            }  # Do not replace with None
-            coc_mappings_clean = {
-                str(k).strip(): str(v).strip() for k, v in coc_mappings.items()
-            }
-            df_uid = df_uid[
-                df_uid["CATEGORY_OPTION_COMBO"].isin(coc_mappings_clean.keys())
-            ]
-            df_uid["CATEGORY_OPTION_COMBO"] = df_uid.loc[
-                :, "CATEGORY_OPTION_COMBO"
-            ].replace(coc_mappings_clean)
+        # select indicator data
+        df_indicator = df[df["INDICATOR"] == uid].copy()
+        if coc_mapping:
+            df_indicator["CATEGORY_OPTION_COMBO"] = coc_mapping.strip()
 
-        if aoc_mappings:
-            aoc_mappings = {
-                k: v for k, v in aoc_mappings.items() if v is not None
-            }  # Do not replace with None
-            aoc_mappings_clean = {
-                str(k).strip(): str(v).strip() for k, v in aoc_mappings.items()
-            }
-            df_uid = df_uid[
-                df_uid["ATTRIBUTE_OPTION_COMBO"].isin(aoc_mappings_clean.keys())
-            ]
-            df_uid["ATTRIBUTE_OPTION_COMBO"] = df_uid.loc[
-                :, "ATTRIBUTE_OPTION_COMBO"
-            ].replace(aoc_mappings_clean)
+        if aoc_mapping:
+            df_indicator["ATTRIBUTE_OPTION_COMBO"] = aoc_mapping.strip()
 
         if uid_mapping:
-            uid_mappings[uid] = uid_mapping
+            df_indicator["DX_UID"] = uid_mapping.strip()
 
-        chunks.append(df_uid)
+        chunks.append(df_indicator)
 
     if len(chunks) == 0:
-        current_run.log_warning(
-            "No data elements matched the provided mappings, returning empty dataframe."
-        )
-        logger.warning(
-            "No data elements matched the provided mappings, returning empty dataframe."
-        )
+        current_run.log_warning("No data elements matched the provided mappings, returning empty dataframe.")
+        logger.warning("No data elements matched the provided mappings, returning empty dataframe.")
         return pd.DataFrame(columns=df.columns)
 
-    df_filtered = pd.concat(chunks, ignore_index=True)
-
-    if uid_mappings:
-        uid_mappings = {
-            k: v for k, v in uid_mappings.items() if v is not None
-        }  # Do not replace with None
-        uid_mappings_clean = {
-            str(k).strip(): str(v).strip() for k, v in uid_mappings.items()
-        }
-        df_filtered["DX_UID"] = df_filtered.loc[:, "DX_UID"].replace(uid_mappings_clean)
-
-    return df_filtered
+    df_mapped = pd.concat(chunks, ignore_index=True)
+    df_mapped["VALUE"] = (
+        df_mapped["VALUE"]
+        .where(df_mapped["VALUE"].abs() >= 1e-9, 0)  # kill float noise
+        .round(4)  # round to 4 decimal places
+    )
+    return df_mapped.sort_values(by="ORG_UNIT")
 
 
 def split_on_pipe(s: str) -> tuple[str, str | None]:

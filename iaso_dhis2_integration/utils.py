@@ -1,14 +1,20 @@
 import json
 import logging
 import os
+import shutil
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Literal
 
 import pandas as pd
+import polars as pl
+import requests
 from dateutil.relativedelta import relativedelta
 from openhexa.sdk import current_run, workspace
 from openhexa.toolbox.dhis2 import DHIS2
+from openhexa.toolbox.dhis2.periods import period_from_string
+from requests.exceptions import HTTPError, RequestException
 
 
 def connect_to_dhis2(connection_str: str, cache_dir: Path) -> DHIS2:
@@ -63,6 +69,14 @@ def load_configuration(config_path: Path) -> dict:
         raise Exception(f"Error decoding JSON: {e}") from e
     except Exception as e:
         raise Exception(f"Unexpected error while loading configuration '{config_path}' {e}") from e
+
+
+def save_logs(logs_file: Path, output_dir: Path) -> None:
+    """Moves all .log files from logs_path to output_dir."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if logs_file.is_file():
+        dest_file = output_dir / logs_file.name
+        shutil.copy(logs_file.as_posix(), dest_file.as_posix())
 
 
 def retrieve_ou_list(dhis2_client: DHIS2, ou_level: int) -> list:
@@ -214,38 +228,76 @@ def save_to_parquet(data: pd.DataFrame, filename: Path) -> None:
         raise RuntimeError(f"Failed to save parquet file to {filename}") from e
 
 
-def read_parquet_extract(parquet_file: Path) -> pd.DataFrame:
-    """Reads a Parquet file and returns its contents as a pandas DataFrame.
+def get_periods(start: str, end: str) -> list[str]:
+    """Generate a list of period strings between the start and end periods (inclusive).
+
+    Parameters
+    ----------
+    start : str
+        The start period as a string (e.g., '202301').
+    end : str
+        The end period as a string (e.g., '202312').
+
+    Returns
+    -------
+    list[str]
+        List of period strings from start to end.
+    """
+    start_period = period_from_string(start)
+    end_period = period_from_string(end)
+
+    if start_period > end_period:
+        raise ValueError(f"start period {start} must be <= end period {end}")
+
+    return [str(p) for p in start_period.get_range(end_period)]
+
+
+def read_parquet_extract(
+    parquet_file: Path,
+    *,
+    engine: Literal["pandas", "polars"] = "pandas",
+) -> pd.DataFrame | pl.DataFrame:
+    """Read a Parquet file using pandas or polars.
 
     Parameters
     ----------
     parquet_file : Path
-        The path to the Parquet file to be read.
+        Path to the Parquet file.
+    engine : {"pandas", "polars"}, default "pandas"
+        Backend used to read the file.
 
     Returns
     -------
-    pd.DataFrame
-        The contents of the Parquet file as a DataFrame.
+    pd.DataFrame | pl.DataFrame
+        Data loaded from the Parquet file.
 
     Raises
     ------
     FileNotFoundError
-        If the specified file does not exist.
-    pd.errors.EmptyDataError
-        If the Parquet file is empty.
-    Exception
-        For any other unexpected errors during reading.
+        If the file does not exist.
+    ValueError
+        If the engine is not supported.
+    RuntimeError
+        For any other error while reading the file.
     """
-    try:
-        ou_source = pd.read_parquet(parquet_file)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Error while loading the extract: File was not found {parquet_file}.") from None
-    except pd.errors.EmptyDataError:
-        raise pd.errors.EmptyDataError(f"Error while loading the extract: File is empty {parquet_file}.") from None
-    except Exception as e:
-        raise RuntimeError(f"Error while loading the extract: {parquet_file}. Error: {e}") from None
+    if not parquet_file.exists():
+        raise FileNotFoundError(
+            f"Error while loading the extract: File was not found {parquet_file}.",
+        )
 
-    return ou_source
+    try:
+        if engine == "pandas":
+            return pd.read_parquet(parquet_file)
+
+        if engine == "polars":
+            return pl.read_parquet(parquet_file)
+
+        raise ValueError(f"Unsupported engine: {engine}")
+
+    except Exception as e:
+        raise RuntimeError(
+            f"Error while loading the extract: {parquet_file}. Error: {e}",
+        ) from None
 
 
 def configure_logging(logs_path: Path, task_name: str) -> Path:
@@ -327,3 +379,39 @@ def read_json_file(file_path: Path) -> dict:
         raise Exception(f"Failed to decode JSON : '{file_path}'. Details: {e}") from e
     except Exception as e:
         raise Exception(f"Unexpected error while reading the file '{file_path}': {e}") from e
+
+
+def dhis2_request(session: requests.Session, method: str, url: str, **kwargs: Any) -> dict:
+    """Wrapper around requests to handle DHIS2 GET/PUT with error handling.
+
+    Parameters
+    ----------
+    session : requests.Session
+        Session object used to perform requests.
+    method : str
+        HTTP method: 'get' or 'put'.
+    url : str
+        Full URL for the request.
+    **kwargs
+        Additional arguments for session.request (json, params, etc.)
+
+    Returns
+    -------
+    dict
+        Either the response JSON or an error payload with 'error' and 'status_code'.
+    """
+    try:
+        r = session.request(method, url, **kwargs)
+        r.raise_for_status()
+        return r.json()
+    except HTTPError as e:
+        try:
+            return {
+                "error": f"HTTP error during {method.upper()} {e} status_code: {r.status_code} response: {r.json()}"
+            }
+        except Exception:
+            return {"error": f"HTTP error during {method.upper()} {e} status_code: {r.status_code}"}
+    except RequestException as e:
+        return {"error": f"Request error during {method.upper()} {url}: {e}"}
+    except Exception as e:
+        return {"error": f"Unexpected error during {method.upper()} {url}: {e}"}

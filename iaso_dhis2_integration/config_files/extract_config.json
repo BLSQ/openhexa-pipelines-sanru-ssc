@@ -1,0 +1,16 @@
+{
+    "SETTINGS":{
+        "IASO_CONNECTION": "iaso-connection-id"
+    },    
+    "EXTRACTS": [
+        {
+            "EXTRACT_UID": "iaso_1",
+            "MODE": "DOWNLOAD_REPLACE",
+            "UIDS": [],            
+            "NUMBER_MONTHS_WINDOW": 5,
+            "START_PERIOD": null,
+            "END_PERIOD": null,               
+            "FREQUENCY": "MONTHLY"
+        }
+    ]    
+}
