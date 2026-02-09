@@ -244,14 +244,24 @@ def handle_iaso_extracts(
             # run data elements extraction per period
             for period in extract_periods:
                 try:
-                    ## HERE WE SHOULD BE GETTING THE PATH TO THE EXTRACTED FILE FROM IASO
-                    ## THEN WE PUSH THIS PATH TO THE QUEUE TO BE PICKED UP BY THE PUSH TASK
-
                     ## (!) HERE we can implement a DOWNLOAD MODE:
-                    ## IF mode == "DOWNLOAD_REPLACE": we download the extract and replace any existing file (same period).
+                    ## IF mode == "DOWNLOAD_REPLACE": we download the extract and replace an existing file (same period).
                     ## ELSE mode == "DOWNLOAD_NEW": we download only those extracts that do not yet exist.
 
+                    #   To ensure that only new (relevant) data is sent to DHIS2, the extraction pipeline can:
+                    #   1. Download all IASO data for each period.
+                    #   2. If a file for that period already exists, compare each row using composite key (orgUnit,dataElementID,period)
+                    #     .. Would be nice to have this key parameterized so it can be used in other pipelines
+                    #   3. Mark each data point (row):
+                    #       - SET Status: "new" if the datapoint do not exist in the extract.
+                    #       - SET Status: "new" if the datapoint "VALUE" has changed.
+                    #
+                    #   4. Push task will select only datapoints with status "new" to be pushed to DHIS2.
+                    #   5. Push task sets datapoints (rows) as "imported", if it was correctly pushed to DHIS2
+
                     # EXAMPLE CODE:
+                    ## HERE WE SHOULD BE GETTING THE PATH TO THE EXTRACTED FILE FROM IASO
+                    ## THEN WE PUSH THIS PATH TO THE QUEUE TO BE PICKED UP BY THE PUSH TASK
                     # extract_path = retrieve_extract(
                     #     iaso_client=iaso_client,
                     #     period=period,
