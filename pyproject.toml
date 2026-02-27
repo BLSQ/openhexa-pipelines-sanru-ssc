@@ -5,18 +5,20 @@ description = "SNT pipelines maintained by Bluesquare Data Services team"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "openhexa.sdk",
+    "openhexa.sdk==2.18.2",
+    "pandas==3.0.0",
+    "polars==1.38.1",
+    "openhexa.toolbox==2.10.0"
 ]
-
-[tool.ruff]
-line-length = 110
 
 [tool.ruff.format]
 docstring-code-format = true
 docstring-code-line-length = 100
 
-[tool.ruff.lint]
+[tool.ruff]
+line-length = 150
 preview = true
+
 select = [
     "F", # Pyflakes
     "E", # pycodestyle
@@ -60,7 +62,7 @@ ignore = [
     "DOC502", # Raised exception is not explicitly raised: {id}	
     "RUF022", # `__all__` is not sorted
     "RUF005", # Consider expression instead of concatenation
-    "PD901", # Avoid using the generic variable name df for dataframes
+    # "PD901", # Avoid using the generic variable name df for dataframes
     "PLR0904", # Too many public methods ({methods} > {max_methods})
     "PLR0911", # Too many return statements ({returns} > {max_returns})
     "PLR0912", # Too many branches ({branches} > {max_branches})
@@ -68,11 +70,11 @@ ignore = [
     "PLR0914", # Too many local variables ({variables} > {max_variables})
     "PLR0915", # Too many statements ({statements} > {max_statements})
     "PLR0916", # Too many Boolean expressions ({expressions} > {max_expressions})
-    "PLR1702", # Too many nested blocks ({blocks} > {max_blocks}),
+    "PLR1702", # Too many nested blocks ({blocks} > {max_blocks})
     "COM812", # Missing trailing comma
 ]
 
-[tool.ruff.lint.flake8-annotations]
+[tool.ruff.flake8-annotations]
 allow-star-arg-any = true
 mypy-init-return = true
 suppress-dummy-args = true
