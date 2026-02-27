@@ -1,0 +1,2200 @@
+[
+    {
+        "name": "today",
+        "data_element_id": "",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "nom_supeviseur",
+        "data_element_id": "s1vb1LEOghU",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "prenom_supeviseur",
+        "data_element_id": "Mml3FSr2z50",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "sexe_superviseur",
+        "data_element_id": "kDJzjiXDhEO",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "fonction_superviseur",
+        "data_element_id": "z1tgavMZWVp",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "telephone_supeviseur",
+        "data_element_id": "aiDCOGxDJCK",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "nom_enquete",
+        "data_element_id": "ZGhMrqh017g",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "prenom_enquete",
+        "data_element_id": "kNsCwKbgdSN",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "sexe_enquete",
+        "data_element_id": "SKJth9CcNAX",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "telephone_enquete",
+        "data_element_id": "pG54VMbedQK",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "gps",
+        "data_element_id": "dwQOeh0GbO8",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Signes_danger",
+        "data_element_id": "uSxzyXS50Gx",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Signes_alerte_gravite",
+        "data_element_id": "SbIQa1RbQCy",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Signes_malnut",
+        "data_element_id": "aoJGlOfSSkw",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Autres_signes",
+        "data_element_id": "w9hCaC1iJcA",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Signe_OrientP_Score",
+        "data_element_id": "O6MIs76IjJu",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Incapable_boire",
+        "data_element_id": "l9R2CxQ0PlG",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Vomit_tout",
+        "data_element_id": "sXxJBmWR80T",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Convulsions_actuelles",
+        "data_element_id": "bdf6XOcQyhE",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Convulsions_recentes",
+        "data_element_id": "Eqrcq9SR8lD",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Lethargie",
+        "data_element_id": "gbjQumFuqIG",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Signe_DangerP_Score",
+        "data_element_id": "toUEjrhaV5s",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "vomi_naus",
+        "data_element_id": "OmdjL6otFSH",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Douleurs_abd",
+        "data_element_id": "E0efquTCcwH",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Diarrhee_indesi",
+        "data_element_id": "sNxn8tdZu5z",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Eruptions",
+        "data_element_id": "GeS4KXLEwOR",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Paleur",
+        "data_element_id": "YpY3uDgf7Tl",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Ictere_jaunis",
+        "data_element_id": "hNQYOyOoq3t",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Maux_tete_oreillle",
+        "data_element_id": "eE7CKnIvhRq",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Vision_floue",
+        "data_element_id": "M9kbM8LiEJZ",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Fatigue_asthenie",
+        "data_element_id": "AblEslIjV5n",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Convulsions_fievre",
+        "data_element_id": "q9u5cDtKDo4",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ConnP_EIM_Score",
+        "data_element_id": "dn4QQCiFRXw",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_pneumonie1",
+        "data_element_id": "PUaa4vZpx8E",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_pneumonie2",
+        "data_element_id": "VCCfG8mbgCG",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_pneumonie3",
+        "data_element_id": "GcyE9yVVNIx",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_fievre",
+        "data_element_id": "CBtHKTQ5l20",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_sellesLiquide",
+        "data_element_id": "zA9ariTsvlU",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_respiRap1",
+        "data_element_id": "b1hRh4AdKGd",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_respiRap2",
+        "data_element_id": "srRob9rqszY",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_deshydra",
+        "data_element_id": "Oue3u6Tx6C9",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_fievreSigneOr",
+        "data_element_id": "JcQJE7UrGTx",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "AlgoP_Score",
+        "data_element_id": "B9DG6bm0g64",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Algo_remark",
+        "data_element_id": "DOetjpS2o4k",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "dispo_recosite2",
+        "data_element_id": "kBGo5CslxmN",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "nom_enquetebis",
+        "data_element_id": "Mf7wHaMaSbk",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "prenom_enquetebis",
+        "data_element_id": "pkDEWcI8xdu",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "sexe_enquetebis",
+        "data_element_id": "e3gm8C2Qeir",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "telephone_enquetebis",
+        "data_element_id": "Yln6ovjiWsM",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Signes_dangerbis",
+        "data_element_id": "Zk6BlQg1qP0",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Signes_alerte_gravitebis",
+        "data_element_id": "dcOua5ZZ8ot",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Signes_malnutbis",
+        "data_element_id": "B5wSvspYjiC",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Autres_signesbis",
+        "data_element_id": "oBhHkGOZwcM",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Signe_OrientP_Scorebis",
+        "data_element_id": "SBHiB9nRbsL",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Incapable_boirebis",
+        "data_element_id": "VkzgxAerme0",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Vomit_toutbis",
+        "data_element_id": "GXwGUCA2wws",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Convulsions_actuellesbis",
+        "data_element_id": "BlbxgHH0ute",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Convulsions_recentesbis",
+        "data_element_id": "Av68vDFkW7A",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Lethargiebis",
+        "data_element_id": "bpLMKttzLhk",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Signe_DangerP_Scorebis",
+        "data_element_id": "KktTBZ1BX9z",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "vomi_nausbis",
+        "data_element_id": "Zde91uZALUq",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Douleurs_abdbis",
+        "data_element_id": "LzlZ9f2d9Vs",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Diarrhee_indesibis",
+        "data_element_id": "A8pDzPVXGkN",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Eruptionsbis",
+        "data_element_id": "BLZsKc4lPuN",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Paleurbis",
+        "data_element_id": "zi8HI2ThX8t",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Ictere_jaunisbis",
+        "data_element_id": "MwPKfXIX9vD",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Maux_tete_oreilllebis",
+        "data_element_id": "lW6a3Wx4A0o",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Vision_flouebis",
+        "data_element_id": "uYqysEwrwT7",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Fatigue_astheniebis",
+        "data_element_id": "B59j3Q9jFkl",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Convulsions_fievrebis",
+        "data_element_id": "Dy4KNVKkFff",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ConnP_EIM_Scorebis",
+        "data_element_id": "j016ioKnepV",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_pneumonie1bis",
+        "data_element_id": "OBCBDtcFMYS",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_pneumonie2bis",
+        "data_element_id": "aTKRIweT384",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_pneumonie3bis",
+        "data_element_id": "QdyIY9uGWSf",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_fievrebis",
+        "data_element_id": "qHW6IjDXISi",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_sellesLiquidebis",
+        "data_element_id": "zrlHqsULoXk",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_respiRap1bis",
+        "data_element_id": "JoxuKnA2zH7",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_respiRap2bis",
+        "data_element_id": "RZ60gV5l7GZ",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_deshydrabis",
+        "data_element_id": "ZFeY0m3t6U7",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "algo_fievreSigneOrbis",
+        "data_element_id": "t784oci26a6",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "AlgoP_Scorebis",
+        "data_element_id": "z6Zv3fXfXaK",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Algo_remarkbis",
+        "data_element_id": "zOKNDA24LKD",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Dispo_RegPEC",
+        "data_element_id": "o09wrWi2LeE",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Tenu_RegPEC",
+        "data_element_id": "pEoFqbO9Hol",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Dispo_RapMens",
+        "data_element_id": "RwVAZo6KMad",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Tenu_RapMens",
+        "data_element_id": "FzHB4dRmtkm",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Dispo_NoteOrient",
+        "data_element_id": "IqbihKF0363",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Dispo_CarteCons",
+        "data_element_id": "D8m3aBfbd6z",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Dispo_ImgEIM",
+        "data_element_id": "sUV85gAlYCK",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "DispoP_Outils_Score",
+        "data_element_id": "QIo0FDxWAhS",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "TenuP_Outils_Score",
+        "data_element_id": "E4DAyE9FcGc",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Amoxy_SI",
+        "data_element_id": "h6MYHsdu6Ng",
+        "CC": "VEZAWmfpJb9",
+        "COC": "BGGU3eg6xv3",
+        "Calcul": ""
+    },
+    {
+        "name": "Amoxy_IN",
+        "data_element_id": "h6MYHsdu6Ng",
+        "CC": "VEZAWmfpJb9",
+        "COC": "xucFWYEShqJ",
+        "Calcul": ""
+    },
+    {
+        "name": "Amoxy_QC_moins_de_1an",
+        "data_element_id": "GqKXyrCbPKt",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Amoxy_QC_1an_a_5ans",
+        "data_element_id": "Ey4JiXC8Cgc",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Amoxy_QC_moins_de_1an_plus_Amoxy_QC_1an_a_5ans",
+        "data_element_id": "h6MYHsdu6Ng",
+        "CC": "VEZAWmfpJb9",
+        "COC": "H8iK8r7x2lw",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "Amoxy_SD",
+        "data_element_id": "h6MYHsdu6Ng",
+        "CC": "VEZAWmfpJb9",
+        "COC": "E7YmRNzUEJI",
+        "Calcul": ""
+    },
+    {
+        "name": "Amoxy_JRS",
+        "data_element_id": "h6MYHsdu6Ng",
+        "CC": "VEZAWmfpJb9",
+        "COC": "tPXegeWHubz",
+        "Calcul": ""
+    },
+    {
+        "name": "SRO_SI",
+        "data_element_id": "jobmrwHt5Mk",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "SRO_IN",
+        "data_element_id": "huVPF2Dpcn4",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "SRO_QC",
+        "data_element_id": "cWyhPEzp2p6",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "SRO_SD",
+        "data_element_id": "kXlbYR0V2pn",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "SRO_JRS",
+        "data_element_id": "BgvIZV3vum7",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "SRO_QC_divide_2",
+        "data_element_id": "PpQVZHo9c60",
+        "CC": "VEZAWmfpJb9",
+        "COC": "H8iK8r7x2lw",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "SRO_SI_divide_2",
+        "data_element_id": "PpQVZHo9c60",
+        "CC": "VEZAWmfpJb9",
+        "COC": "BGGU3eg6xv3",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "SRO_SD_divide_2",
+        "data_element_id": "PpQVZHo9c60",
+        "CC": "VEZAWmfpJb9",
+        "COC": "E7YmRNzUEJI",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "SRO_IN_divide_2",
+        "data_element_id": "PpQVZHo9c60",
+        "CC": "VEZAWmfpJb9",
+        "COC": "xucFWYEShqJ",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "SRO_JRS_divide_2",
+        "data_element_id": "PpQVZHo9c60",
+        "CC": "VEZAWmfpJb9",
+        "COC": "tPXegeWHubz",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "Zinc_SI",
+        "data_element_id": "RUyfD1UsHhZ",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Zinc_IN",
+        "data_element_id": "CKRLZA5okfX",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Zinc_QC_moins_de_6mois",
+        "data_element_id": "YHioaAkWWCX",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Zinc_QC_6mois_et_plus",
+        "data_element_id": "EmiyatCQ8pK",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Zinc_SD",
+        "data_element_id": "hkEn0C8AHV7",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Zinc_JRS",
+        "data_element_id": "Tozt7O6Cyqm",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Mebend_100mg_SI",
+        "data_element_id": "kezceFlHfs8",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Mebend_100mg_IN",
+        "data_element_id": "mY9ZwcS9pO1",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Mebend_100mg_QC",
+        "data_element_id": "KFUx1d6lyl2",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Mebend_100mg_SD",
+        "data_element_id": "bBJYCTGo56C",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Mebend_100mg_JRS",
+        "data_element_id": "a69xCtaqshU",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Mebend_500mg_SI",
+        "data_element_id": "Qsx0hx3yF1E",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Mebend_500mg_IN",
+        "data_element_id": "FLhhIM4Wby5",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Mebend_500mg_QC",
+        "data_element_id": "Y9cYDAHncoh",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Mebend_500mg_SD",
+        "data_element_id": "FK7HBDjU1pt",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Mebend_500mg_JRS",
+        "data_element_id": "y0FlcE8mddj",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_25_67mg_SI",
+        "data_element_id": "eCie52o4CMA",
+        "CC": "VEZAWmfpJb9",
+        "COC": "BGGU3eg6xv3",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_25_67mg_IN",
+        "data_element_id": "eCie52o4CMA",
+        "CC": "VEZAWmfpJb9",
+        "COC": "xucFWYEShqJ",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_25_67mg_QC",
+        "data_element_id": "eCie52o4CMA",
+        "CC": "VEZAWmfpJb9",
+        "COC": "H8iK8r7x2lw",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_25_67mg_SD",
+        "data_element_id": "eCie52o4CMA",
+        "CC": "VEZAWmfpJb9",
+        "COC": "E7YmRNzUEJI",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_25_67mg_JRS",
+        "data_element_id": "eCie52o4CMA",
+        "CC": "VEZAWmfpJb9",
+        "COC": "tPXegeWHubz",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_50_135mg_SI",
+        "data_element_id": "ClYb3VByTE6",
+        "CC": "VEZAWmfpJb9",
+        "COC": "BGGU3eg6xv3",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_50_135mg_IN",
+        "data_element_id": "ClYb3VByTE6",
+        "CC": "VEZAWmfpJb9",
+        "COC": "xucFWYEShqJ",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_50_135mg_QC",
+        "data_element_id": "ClYb3VByTE6",
+        "CC": "VEZAWmfpJb9",
+        "COC": "H8iK8r7x2lw",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_50_135mg_SD",
+        "data_element_id": "ClYb3VByTE6",
+        "CC": "VEZAWmfpJb9",
+        "COC": "E7YmRNzUEJI",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_50_135mg_JRS",
+        "data_element_id": "ClYb3VByTE6",
+        "CC": "VEZAWmfpJb9",
+        "COC": "tPXegeWHubz",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_100_200mg_SI",
+        "data_element_id": "MM0lUiRebHh",
+        "CC": "VEZAWmfpJb9",
+        "COC": "BGGU3eg6xv3",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_100_200mg_IN",
+        "data_element_id": "MM0lUiRebHh",
+        "CC": "VEZAWmfpJb9",
+        "COC": "xucFWYEShqJ",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_100_200mg_QC",
+        "data_element_id": "MM0lUiRebHh",
+        "CC": "VEZAWmfpJb9",
+        "COC": "H8iK8r7x2lw",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_100_200mg_SD",
+        "data_element_id": "MM0lUiRebHh",
+        "CC": "VEZAWmfpJb9",
+        "COC": "E7YmRNzUEJI",
+        "Calcul": ""
+    },
+    {
+        "name": "ASAQ_100_200mg_JRS",
+        "data_element_id": "MM0lUiRebHh",
+        "CC": "VEZAWmfpJb9",
+        "COC": "tPXegeWHubz",
+        "Calcul": ""
+    },
+    {
+        "name": "Artemether_SI",
+        "data_element_id": "SHir3cETtGF",
+        "CC": "VEZAWmfpJb9",
+        "COC": "BGGU3eg6xv3",
+        "Calcul": ""
+    },
+    {
+        "name": "Artemether_IN",
+        "data_element_id": "SHir3cETtGF",
+        "CC": "VEZAWmfpJb9",
+        "COC": "xucFWYEShqJ",
+        "Calcul": ""
+    },
+    {
+        "name": "Artemether_QC",
+        "data_element_id": "SHir3cETtGF",
+        "CC": "VEZAWmfpJb9",
+        "COC": "H8iK8r7x2lw",
+        "Calcul": ""
+    },
+    {
+        "name": "Artemether_SD",
+        "data_element_id": "SHir3cETtGF",
+        "CC": "VEZAWmfpJb9",
+        "COC": "E7YmRNzUEJI",
+        "Calcul": ""
+    },
+    {
+        "name": "Artemether_JRS",
+        "data_element_id": "SHir3cETtGF",
+        "CC": "VEZAWmfpJb9",
+        "COC": "tPXegeWHubz",
+        "Calcul": ""
+    },
+    {
+        "name": "dispo_ASuppo50mg",
+        "data_element_id": "SMyjT1hKJGJ",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo50mg_SI",
+        "data_element_id": "BmjpPxSGowk",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo50mg_IN",
+        "data_element_id": "RWLwGl1jO5E",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo50mg_QC",
+        "data_element_id": "pgSYKQmnzcU",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo50mg_SD",
+        "data_element_id": "n30E4uvx3dO",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo50mg_JRS",
+        "data_element_id": "WlkH2agkZyR",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo100mg_SI",
+        "data_element_id": "snaJCvHFEyh",
+        "CC": "VEZAWmfpJb9",
+        "COC": "BGGU3eg6xv3",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo100mg_IN",
+        "data_element_id": "snaJCvHFEyh",
+        "CC": "VEZAWmfpJb9",
+        "COC": "xucFWYEShqJ",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo100mg_QC",
+        "data_element_id": "snaJCvHFEyh",
+        "CC": "VEZAWmfpJb9",
+        "COC": "H8iK8r7x2lw",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo100mg_SD",
+        "data_element_id": "snaJCvHFEyh",
+        "CC": "VEZAWmfpJb9",
+        "COC": "E7YmRNzUEJI",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo100mg_JRS",
+        "data_element_id": "snaJCvHFEyh",
+        "CC": "VEZAWmfpJb9",
+        "COC": "tPXegeWHubz",
+        "Calcul": ""
+    },
+    {
+        "name": "dispo_ASuppo200mg",
+        "data_element_id": "FN0wTDgz56L",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo200mg_SI",
+        "data_element_id": "HfGj1L9N3ao",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo200mg_IN",
+        "data_element_id": "d0M7jWfJDGW",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo200mg_QC",
+        "data_element_id": "t5e2iCzphSJ",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo200mg_SD",
+        "data_element_id": "FpX4viC7VB1",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ASuppo200mg_JRS",
+        "data_element_id": "chNMInOOakg",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "dispo_Paracetamol_100mg",
+        "data_element_id": "C3W2Xmt1dVr",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_100mg_SI",
+        "data_element_id": "q8l6T7xcoZu",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_100mg_IN",
+        "data_element_id": "bfmQDbzYZE2",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_100mg_mons1an_QC",
+        "data_element_id": "n3gML0cHRaI",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_100mg_1a3ans_QC",
+        "data_element_id": "qSYykbgVVtU",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_100mg_3ansplus_QC",
+        "data_element_id": "d6wq9d5679D",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_100mg_SD",
+        "data_element_id": "XuNOzeXYfTm",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_100mg_JRS",
+        "data_element_id": "xKNC4vPxqGy",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "dispo_Paracetamol_500mg",
+        "data_element_id": "nN68pQv7WPy",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_500mg_SI",
+        "data_element_id": "F0yqzVggyLI",
+        "CC": "VEZAWmfpJb9",
+        "COC": "BGGU3eg6xv3",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_500mg_IN",
+        "data_element_id": "F0yqzVggyLI",
+        "CC": "VEZAWmfpJb9",
+        "COC": "xucFWYEShqJ",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_500mg_moins1_QC",
+        "data_element_id": "O4y9lqxrJtU",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_500mg_1a3ans_QC",
+        "data_element_id": "J9PJ8fSvxw2",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_500mg_3ansplus_QC",
+        "data_element_id": "lZbVYYQxSvb",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_500mg_moins1_QC_plus_Paracetamol_500mg_1a3ans_QC_plus_Paracetamol_500mg_3ansplus_QC",
+        "data_element_id": "F0yqzVggyLI",
+        "CC": "VEZAWmfpJb9",
+        "COC": "H8iK8r7x2lw",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "Paracetamol_500mg_SD",
+        "data_element_id": "F0yqzVggyLI",
+        "CC": "VEZAWmfpJb9",
+        "COC": "E7YmRNzUEJI",
+        "Calcul": ""
+    },
+    {
+        "name": "Paracetamol_500mg_JRS",
+        "data_element_id": "F0yqzVggyLI",
+        "CC": "VEZAWmfpJb9",
+        "COC": "tPXegeWHubz",
+        "Calcul": ""
+    },
+    {
+        "name": "gants_SD",
+        "data_element_id": "aXr5TfGqZDv",
+        "CC": "VEZAWmfpJb9",
+        "COC": "E7YmRNzUEJI",
+        "Calcul": ""
+    },
+    {
+        "name": "TDR_SI",
+        "data_element_id": "D2baj25uQ4B",
+        "CC": "VEZAWmfpJb9",
+        "COC": "BGGU3eg6xv3",
+        "Calcul": ""
+    },
+    {
+        "name": "TDR_IN",
+        "data_element_id": "D2baj25uQ4B",
+        "CC": "VEZAWmfpJb9",
+        "COC": "xucFWYEShqJ",
+        "Calcul": ""
+    },
+    {
+        "name": "TDR_QC",
+        "data_element_id": "D2baj25uQ4B",
+        "CC": "VEZAWmfpJb9",
+        "COC": "H8iK8r7x2lw",
+        "Calcul": ""
+    },
+    {
+        "name": "TDR_SD",
+        "data_element_id": "D2baj25uQ4B",
+        "CC": "VEZAWmfpJb9",
+        "COC": "E7YmRNzUEJI",
+        "Calcul": ""
+    },
+    {
+        "name": "TDR_JRS",
+        "data_element_id": "D2baj25uQ4B",
+        "CC": "VEZAWmfpJb9",
+        "COC": "tPXegeWHubz",
+        "Calcul": ""
+    },
+    {
+        "name": "MedP_Score",
+        "data_element_id": "hRF2xoylPGc",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Balance",
+        "data_element_id": "pCbiHFTLwRX",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "Minuteur_ARI",
+        "data_element_id": "TE6Aa91UYPq",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "count yes Minuteur_ARI",
+        "data_element_id": "iGpbUZUD1Tk",
+        "CC": "q79nigpo703",
+        "COC": "RMaUmUEgVY5",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "count yes Minuteur_ARI 2",
+        "data_element_id": "iGpbUZUD1Tk",
+        "CC": "q79nigpo703",
+        "COC": "AYBTLOkCk4J",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "Minuterie_TDR",
+        "data_element_id": "PbfjWaCTa5N",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "count yes MUAC",
+        "data_element_id": "V2jjsMl2HNE",
+        "CC": "q79nigpo703",
+        "COC": "RMaUmUEgVY5",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "count yes MUAC 2",
+        "data_element_id": "V2jjsMl2HNE",
+        "CC": "q79nigpo703",
+        "COC": "AYBTLOkCk4J",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "count yes Poubelle_recep",
+        "data_element_id": "yBtSC9L8pFq",
+        "CC": "q79nigpo703",
+        "COC": "RMaUmUEgVY5",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "count yes Poubelle_recep",
+        "data_element_id": "yBtSC9L8pFq",
+        "CC": "q79nigpo703",
+        "COC": "AYBTLOkCk4J",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "MatP_Score",
+        "data_element_id": "QfgzbgqFilR",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "caisseMedExiste",
+        "data_element_id": "OKNboYw64X3",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "count yes caisseMedExiste",
+        "data_element_id": "BKbES76lwvb",
+        "CC": "q79nigpo703",
+        "COC": "RMaUmUEgVY5",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "CaisseAeree",
+        "data_element_id": "qspAABnzoon",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "CaissePropre",
+        "data_element_id": "rOJUItwJXw4",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "CaisseSecure",
+        "data_element_id": "tIJehmGW2z1",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "count yes CaisseSecure",
+        "data_element_id": "BKbES76lwvb",
+        "CC": "q79nigpo703",
+        "COC": "AYBTLOkCk4J",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "MedRange",
+        "data_element_id": "XxiPhbqhH7U",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "PasHumidite",
+        "data_element_id": "TlwQsyfV0Fz",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "PasChaleur",
+        "data_element_id": "S1vM5Izt9jM",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "CondMedP_Score",
+        "data_element_id": "JE1gmn7bMUj",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "ImgEIM_Existe",
+        "data_element_id": "DGNyTHOyvD9",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "EIM_FicheExiste",
+        "data_element_id": "vRD70sOVJRQ",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "EIM_circuitConnu",
+        "data_element_id": "v61m8br9lTe",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "EIM_recherche",
+        "data_element_id": "mM76WYfX7mX",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "GestionEimP_Score",
+        "data_element_id": "Dj25tnGBBOu",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "CommentEIM",
+        "data_element_id": "RtccZeAQVTk",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasSscAS-5_F",
+        "data_element_id": "gVn4oTeILoA",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Vp7NplQinrp",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasSscAS-5_G",
+        "data_element_id": "gVn4oTeILoA",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Ds4egSzxA82",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasSscAS5plus_F",
+        "data_element_id": "gVn4oTeILoA",
+        "CC": "nMqGMkaHBNL",
+        "COC": "xC6EKvE5T87",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasSscAS5plus_G",
+        "data_element_id": "gVn4oTeILoA",
+        "CC": "nMqGMkaHBNL",
+        "COC": "pkBSvVsg95J",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasSscHAS-5_F",
+        "data_element_id": "xiKy8AhuK37",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Vp7NplQinrp",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasSscHAS-5_G",
+        "data_element_id": "xiKy8AhuK37",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Ds4egSzxA82",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasSscHAS5plus_F",
+        "data_element_id": "xiKy8AhuK37",
+        "CC": "nMqGMkaHBNL",
+        "COC": "xC6EKvE5T87",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasSscHAS5plus_G",
+        "data_element_id": "xiKy8AhuK37",
+        "CC": "nMqGMkaHBNL",
+        "COC": "pkBSvVsg95J",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasSscHZS-5_F",
+        "data_element_id": "lVuqJlrCp93",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Vp7NplQinrp",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasSscHZS-5_G",
+        "data_element_id": "lVuqJlrCp93",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Ds4egSzxA82",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasSscHZS5plus_F",
+        "data_element_id": "lVuqJlrCp93",
+        "CC": "nMqGMkaHBNL",
+        "COC": "xC6EKvE5T87",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasSscHZS5plus_G",
+        "data_element_id": "lVuqJlrCp93",
+        "CC": "nMqGMkaHBNL",
+        "COC": "pkBSvVsg95J",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasDom-5_F",
+        "data_element_id": "Ev7RpulueTh",
+        "CC": "AmfOtpUfleJ",
+        "COC": "lxCk25Zaot2",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasDom-5_G",
+        "data_element_id": "Ev7RpulueTh",
+        "CC": "AmfOtpUfleJ",
+        "COC": "yOtlIBzT2iq",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasDom5plus_F",
+        "data_element_id": "Ev7RpulueTh",
+        "CC": "AmfOtpUfleJ",
+        "COC": "X77mq9TrpGd",
+        "Calcul": ""
+    },
+    {
+        "name": "NbCasDom5plus_G",
+        "data_element_id": "Ev7RpulueTh",
+        "CC": "AmfOtpUfleJ",
+        "COC": "RZPi8XijKo3",
+        "Calcul": ""
+    },
+    {
+        "name": "CasTotal-5F",
+        "data_element_id": "ea6VG1O2CGV",
+        "CC": "AmfOtpUfleJ",
+        "COC": "lxCk25Zaot2",
+        "Calcul": ""
+    },
+    {
+        "name": "CasTotal-5G",
+        "data_element_id": "ea6VG1O2CGV",
+        "CC": "AmfOtpUfleJ",
+        "COC": "yOtlIBzT2iq",
+        "Calcul": ""
+    },
+    {
+        "name": "CasTotal5plusF",
+        "data_element_id": "ea6VG1O2CGV",
+        "CC": "AmfOtpUfleJ",
+        "COC": "X77mq9TrpGd",
+        "Calcul": ""
+    },
+    {
+        "name": "CasTotal5plusG",
+        "data_element_id": "ea6VG1O2CGV",
+        "CC": "AmfOtpUfleJ",
+        "COC": "RZPi8XijKo3",
+        "Calcul": ""
+    },
+    {
+        "name": "DecesCom-5_F",
+        "data_element_id": "XQXO5P3LVdb",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Vp7NplQinrp",
+        "Calcul": ""
+    },
+    {
+        "name": "DecesCom-5_G",
+        "data_element_id": "XQXO5P3LVdb",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Ds4egSzxA82",
+        "Calcul": ""
+    },
+    {
+        "name": "DecesCom5plus_F",
+        "data_element_id": "XQXO5P3LVdb",
+        "CC": "nMqGMkaHBNL",
+        "COC": "xC6EKvE5T87",
+        "Calcul": ""
+    },
+    {
+        "name": "DecesCom5plus_G",
+        "data_element_id": "XQXO5P3LVdb",
+        "CC": "nMqGMkaHBNL",
+        "COC": "pkBSvVsg95J",
+        "Calcul": ""
+    },
+    {
+        "name": "PlainteToux-5_F",
+        "data_element_id": "o1Nek7AOSeW",
+        "CC": "AmfOtpUfleJ",
+        "COC": "lxCk25Zaot2",
+        "Calcul": ""
+    },
+    {
+        "name": "PlainteToux-5_G",
+        "data_element_id": "o1Nek7AOSeW",
+        "CC": "AmfOtpUfleJ",
+        "COC": "yOtlIBzT2iq",
+        "Calcul": ""
+    },
+    {
+        "name": "PlainteFievre-5_F",
+        "data_element_id": "AmDZSYoRowe",
+        "CC": "AmfOtpUfleJ",
+        "COC": "lxCk25Zaot2",
+        "Calcul": ""
+    },
+    {
+        "name": "PlainteFievre-5_G",
+        "data_element_id": "AmDZSYoRowe",
+        "CC": "AmfOtpUfleJ",
+        "COC": "yOtlIBzT2iq",
+        "Calcul": ""
+    },
+    {
+        "name": "PlainteFievre5plus_F",
+        "data_element_id": "AmDZSYoRowe",
+        "CC": "AmfOtpUfleJ",
+        "COC": "X77mq9TrpGd",
+        "Calcul": ""
+    },
+    {
+        "name": "PlainteFievre5plus_G",
+        "data_element_id": "AmDZSYoRowe",
+        "CC": "AmfOtpUfleJ",
+        "COC": "RZPi8XijKo3",
+        "Calcul": ""
+    },
+    {
+        "name": "PlainteDiarrhee-5_F",
+        "data_element_id": "EE2GBzg6H2H",
+        "CC": "AmfOtpUfleJ",
+        "COC": "lxCk25Zaot2",
+        "Calcul": ""
+    },
+    {
+        "name": "PlainteDiarrhee-5_G",
+        "data_element_id": "EE2GBzg6H2H",
+        "CC": "AmfOtpUfleJ",
+        "COC": "yOtlIBzT2iq",
+        "Calcul": ""
+    },
+    {
+        "name": "PlainteAutre-5_F",
+        "data_element_id": "B3ys8uFK8J3",
+        "CC": "r5QZAi3XcUl",
+        "COC": "MvjoJgsGjwD",
+        "Calcul": ""
+    },
+    {
+        "name": "PlainteAutre-5_G",
+        "data_element_id": "B3ys8uFK8J3",
+        "CC": "r5QZAi3XcUl",
+        "COC": "UnzmG6kLtNN",
+        "Calcul": ""
+    },
+    {
+        "name": "EvalMvtResp-5_F",
+        "data_element_id": "EgVLHA1AoWZ",
+        "CC": "r5QZAi3XcUl",
+        "COC": "MvjoJgsGjwD",
+        "Calcul": ""
+    },
+    {
+        "name": "EvalMvtResp-5_G",
+        "data_element_id": "EgVLHA1AoWZ",
+        "CC": "r5QZAi3XcUl",
+        "COC": "UnzmG6kLtNN",
+        "Calcul": ""
+    },
+    {
+        "name": "TdrRealise-5_F",
+        "data_element_id": "x1pMsRh4qTb",
+        "CC": "oVfBEjha0Uq",
+        "COC": "hS7dMytTnyA",
+        "Calcul": ""
+    },
+    {
+        "name": "TdrRealise-5_G",
+        "data_element_id": "x1pMsRh4qTb",
+        "CC": "oVfBEjha0Uq",
+        "COC": "QOWDU0Ab7ir",
+        "Calcul": ""
+    },
+    {
+        "name": "TdrRealise5plus_F",
+        "data_element_id": "x1pMsRh4qTb",
+        "CC": "oVfBEjha0Uq",
+        "COC": "lZLIj2S9Vw4",
+        "Calcul": ""
+    },
+    {
+        "name": "TdrRealise5plus_G",
+        "data_element_id": "x1pMsRh4qTb",
+        "CC": "oVfBEjha0Uq",
+        "COC": "vUZNjI9QqGj",
+        "Calcul": ""
+    },
+    {
+        "name": "PBRealise-5_F",
+        "data_element_id": "C0TerlR4qbP",
+        "CC": "oVfBEjha0Uq",
+        "COC": "hS7dMytTnyA",
+        "Calcul": ""
+    },
+    {
+        "name": "PBRealise-5_G",
+        "data_element_id": "C0TerlR4qbP",
+        "CC": "oVfBEjha0Uq",
+        "COC": "QOWDU0Ab7ir",
+        "Calcul": ""
+    },
+    {
+        "name": "CasOrientCS-5_F_plus_CasOrientCS-5_G",
+        "data_element_id": "YYA8ItKSyeI",
+        "CC": "cqnBbXpOBEI",
+        "COC": "mJu7j3mvITo",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "CasOrientCS5plus_F_plus_CasOrientCS5plus_G",
+        "data_element_id": "YYA8ItKSyeI",
+        "CC": "cqnBbXpOBEI",
+        "COC": "BFIiMDvxsAm",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "CasContreOrient-5_F_plus_CasContreOrient-5_G",
+        "data_element_id": "pXDYiqyVlRw",
+        "CC": "cqnBbXpOBEI",
+        "COC": "mJu7j3mvITo",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "CasContreOrient5plus_F_plus_CasContreOrient5plus_G",
+        "data_element_id": "pXDYiqyVlRw",
+        "CC": "cqnBbXpOBEI",
+        "COC": "BFIiMDvxsAm",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "CasPresTB-5_F",
+        "data_element_id": "jOgjZmQXHM5",
+        "CC": "r5QZAi3XcUl",
+        "COC": "MvjoJgsGjwD",
+        "Calcul": ""
+    },
+    {
+        "name": "CasPresTB-5_G",
+        "data_element_id": "jOgjZmQXHM5",
+        "CC": "r5QZAi3XcUl",
+        "COC": "UnzmG6kLtNN",
+        "Calcul": ""
+    },
+    {
+        "name": "CasPresTB-5_F_plus_CasPresTB-5_G",
+        "data_element_id": "Bhe1euxWYg3",
+        "CC": "cqnBbXpOBEI",
+        "COC": "mJu7j3mvITo",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "CasSuspPaluGrav-5_F",
+        "data_element_id": "NLgFPOmnNSP",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Vp7NplQinrp",
+        "Calcul": ""
+    },
+    {
+        "name": "CasSuspPaluGrav-5_G",
+        "data_element_id": "NLgFPOmnNSP",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Ds4egSzxA82",
+        "Calcul": ""
+    },
+    {
+        "name": "CasSuspPaluGrav5plus_F",
+        "data_element_id": "NLgFPOmnNSP",
+        "CC": "nMqGMkaHBNL",
+        "COC": "xC6EKvE5T87",
+        "Calcul": ""
+    },
+    {
+        "name": "CasSuspPaluGrav5plus_G",
+        "data_element_id": "NLgFPOmnNSP",
+        "CC": "nMqGMkaHBNL",
+        "COC": "pkBSvVsg95J",
+        "Calcul": ""
+    },
+    {
+        "name": "CasSuspPaluGrav-5_F_plus_CasSuspPaluGrav-5_G",
+        "data_element_id": "R6F51ltWr3v",
+        "CC": "cqnBbXpOBEI",
+        "COC": "mJu7j3mvITo",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "CasSuspPaluGrav5plus_F_plus_CasSuspPaluGrav5plus_G",
+        "data_element_id": "R6F51ltWr3v",
+        "CC": "cqnBbXpOBEI",
+        "COC": "BFIiMDvxsAm",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "CasTBConfirm-5_F_plus_CasTBConfirm-5_G",
+        "data_element_id": "zvjPrK14Dwf",
+        "CC": "cqnBbXpOBEI",
+        "COC": "mJu7j3mvITo",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "PBRouge6-59_F",
+        "data_element_id": "Km2DxtykFu5",
+        "CC": "oVfBEjha0Uq",
+        "COC": "hS7dMytTnyA",
+        "Calcul": ""
+    },
+    {
+        "name": "PBRouge6-59_G",
+        "data_element_id": "Km2DxtykFu5",
+        "CC": "oVfBEjha0Uq",
+        "COC": "QOWDU0Ab7ir",
+        "Calcul": ""
+    },
+    {
+        "name": "PBJaune6-59_F",
+        "data_element_id": "h8caqDiEKRT",
+        "CC": "oVfBEjha0Uq",
+        "COC": "hS7dMytTnyA",
+        "Calcul": ""
+    },
+    {
+        "name": "PBJaune6-59_G",
+        "data_element_id": "h8caqDiEKRT",
+        "CC": "oVfBEjha0Uq",
+        "COC": "QOWDU0Ab7ir",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassTouxRhume-5_F",
+        "data_element_id": "Vt07CemOZzo",
+        "CC": "r5QZAi3XcUl",
+        "COC": "MvjoJgsGjwD",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassTouxRhume-5_G",
+        "data_element_id": "Vt07CemOZzo",
+        "CC": "r5QZAi3XcUl",
+        "COC": "UnzmG6kLtNN",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassPneumonie-5_F",
+        "data_element_id": "hY9mMLYYQLK",
+        "CC": "oVfBEjha0Uq",
+        "COC": "hS7dMytTnyA",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassPneumonie-5_G",
+        "data_element_id": "hY9mMLYYQLK",
+        "CC": "oVfBEjha0Uq",
+        "COC": "QOWDU0Ab7ir",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassDiarrhee-5_F",
+        "data_element_id": "PsgM7NS9Ngw",
+        "CC": "r5QZAi3XcUl",
+        "COC": "MvjoJgsGjwD",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassDiarrhee-5_G",
+        "data_element_id": "PsgM7NS9Ngw",
+        "CC": "r5QZAi3XcUl",
+        "COC": "UnzmG6kLtNN",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassDiarrhee-5_F",
+        "data_element_id": "utRCzeR4FlF",
+        "CC": "oVfBEjha0Uq",
+        "COC": "hS7dMytTnyA",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassDiarrhee-5_G",
+        "data_element_id": "utRCzeR4FlF",
+        "CC": "oVfBEjha0Uq",
+        "COC": "QOWDU0Ab7ir",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassPaludisme-5_F",
+        "data_element_id": "KsCh65522e3",
+        "CC": "oVfBEjha0Uq",
+        "COC": "hS7dMytTnyA",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassPaludisme-5_G",
+        "data_element_id": "KsCh65522e3",
+        "CC": "oVfBEjha0Uq",
+        "COC": "QOWDU0Ab7ir",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassPaludisme5plus_F",
+        "data_element_id": "KsCh65522e3",
+        "CC": "oVfBEjha0Uq",
+        "COC": "lZLIj2S9Vw4",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassPaludisme5plus_G",
+        "data_element_id": "KsCh65522e3",
+        "CC": "oVfBEjha0Uq",
+        "COC": "vUZNjI9QqGj",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassFievre-5_F",
+        "data_element_id": "BIxWBYNNL84",
+        "CC": "oVfBEjha0Uq",
+        "COC": "hS7dMytTnyA",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassFievre-5_G",
+        "data_element_id": "BIxWBYNNL84",
+        "CC": "oVfBEjha0Uq",
+        "COC": "QOWDU0Ab7ir",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassFievre5plus_F",
+        "data_element_id": "BIxWBYNNL84",
+        "CC": "oVfBEjha0Uq",
+        "COC": "lZLIj2S9Vw4",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassFievre5plus_G",
+        "data_element_id": "BIxWBYNNL84",
+        "CC": "oVfBEjha0Uq",
+        "COC": "vUZNjI9QqGj",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassCasSusPalu-5_F",
+        "data_element_id": "abE7GHWboZs",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Vp7NplQinrp",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassCasSusPalu-5_G",
+        "data_element_id": "abE7GHWboZs",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Ds4egSzxA82",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassCasSusPalu5plus_F",
+        "data_element_id": "abE7GHWboZs",
+        "CC": "nMqGMkaHBNL",
+        "COC": "xC6EKvE5T87",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassCasSusPalu5plus_G",
+        "data_element_id": "abE7GHWboZs",
+        "CC": "nMqGMkaHBNL",
+        "COC": "pkBSvVsg95J",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassCasSusPalu-5_F",
+        "data_element_id": "uPYVlB7JcVC",
+        "CC": "oVfBEjha0Uq",
+        "COC": "hS7dMytTnyA",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassCasSusPalu-5_G",
+        "data_element_id": "uPYVlB7JcVC",
+        "CC": "oVfBEjha0Uq",
+        "COC": "QOWDU0Ab7ir",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassCasSusPalu5plus_F",
+        "data_element_id": "uPYVlB7JcVC",
+        "CC": "oVfBEjha0Uq",
+        "COC": "lZLIj2S9Vw4",
+        "Calcul": ""
+    },
+    {
+        "name": "ClassCasSusPalu5plus_G",
+        "data_element_id": "uPYVlB7JcVC",
+        "CC": "oVfBEjha0Uq",
+        "COC": "vUZNjI9QqGj",
+        "Calcul": ""
+    },
+    {
+        "name": "CasPneumoPN-5_F",
+        "data_element_id": "E4FHBME7hDx",
+        "CC": "oVfBEjha0Uq",
+        "COC": "hS7dMytTnyA",
+        "Calcul": ""
+    },
+    {
+        "name": "CasPneumoPN-5_G",
+        "data_element_id": "E4FHBME7hDx",
+        "CC": "oVfBEjha0Uq",
+        "COC": "QOWDU0Ab7ir",
+        "Calcul": ""
+    },
+    {
+        "name": "CasPaluSimplePN-5_F",
+        "data_element_id": "EIKKvpg0E1J",
+        "CC": "oVfBEjha0Uq",
+        "COC": "hS7dMytTnyA",
+        "Calcul": ""
+    },
+    {
+        "name": "CasPaluSimplePN-5_G",
+        "data_element_id": "EIKKvpg0E1J",
+        "CC": "oVfBEjha0Uq",
+        "COC": "QOWDU0Ab7ir",
+        "Calcul": ""
+    },
+    {
+        "name": "CasPaluSimplePN5plus_F",
+        "data_element_id": "EIKKvpg0E1J",
+        "CC": "oVfBEjha0Uq",
+        "COC": "lZLIj2S9Vw4",
+        "Calcul": ""
+    },
+    {
+        "name": "CasPaluSimplePN5plus_G",
+        "data_element_id": "EIKKvpg0E1J",
+        "CC": "oVfBEjha0Uq",
+        "COC": "vUZNjI9QqGj",
+        "Calcul": ""
+    },
+    {
+        "name": "CasSuspPaluPN-5_F",
+        "data_element_id": "sgYfykZcDps",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Vp7NplQinrp",
+        "Calcul": ""
+    },
+    {
+        "name": "CasSuspPaluPN-5_G",
+        "data_element_id": "sgYfykZcDps",
+        "CC": "nMqGMkaHBNL",
+        "COC": "Ds4egSzxA82",
+        "Calcul": ""
+    },
+    {
+        "name": "CasSuspPaluPN5plus_F",
+        "data_element_id": "sgYfykZcDps",
+        "CC": "nMqGMkaHBNL",
+        "COC": "xC6EKvE5T87",
+        "Calcul": ""
+    },
+    {
+        "name": "CasSuspPaluPN5plus_G",
+        "data_element_id": "sgYfykZcDps",
+        "CC": "nMqGMkaHBNL",
+        "COC": "pkBSvVsg95J",
+        "Calcul": ""
+    },
+    {
+        "name": "CasDiarrheePN-5_F",
+        "data_element_id": "wsJfdq7EFHO",
+        "CC": "oVfBEjha0Uq",
+        "COC": "hS7dMytTnyA",
+        "Calcul": ""
+    },
+    {
+        "name": "CasDiarrheePN-5_G",
+        "data_element_id": "wsJfdq7EFHO",
+        "CC": "oVfBEjha0Uq",
+        "COC": "QOWDU0Ab7ir",
+        "Calcul": ""
+    },
+    {
+        "name": "CasArteSuppo-5_F",
+        "data_element_id": "ZKt6epkZ4SZ",
+        "CC": "r5QZAi3XcUl",
+        "COC": "MvjoJgsGjwD",
+        "Calcul": ""
+    },
+    {
+        "name": "CasArteSuppo-5_G",
+        "data_element_id": "ZKt6epkZ4SZ",
+        "CC": "r5QZAi3XcUl",
+        "COC": "UnzmG6kLtNN",
+        "Calcul": ""
+    },
+    {
+        "name": "CasEffetIndes-5_F_plus_CasEffetIndes-5_G_plus_CasEffetIndes5plus_F_plus_CasEffetIndes5plus_G",
+        "data_element_id": "yyuuprL2NKR",
+        "CC": "",
+        "COC": "",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "CasPECPBRouge-5_F",
+        "data_element_id": "WI1Qrzh1uwm",
+        "CC": "r5QZAi3XcUl",
+        "COC": "MvjoJgsGjwD",
+        "Calcul": ""
+    },
+    {
+        "name": "CasPECPBRouge-5_G",
+        "data_element_id": "WI1Qrzh1uwm",
+        "CC": "r5QZAi3XcUl",
+        "COC": "UnzmG6kLtNN",
+        "Calcul": ""
+    },
+    {
+        "name": "PBRouge6-59_F_plus_PBRouge6-59_G_plus_PBJaune6-59_F_plus_PBJaune6-59_G",
+        "data_element_id": "UVFrDmLv1go",
+        "CC": "",
+        "COC": "",
+        "Calcul": "transformation needed"
+    },
+    {
+        "name": "datafile_remark",
+        "data_element_id": "TMkAkZapW8E",
+        "CC": "",
+        "COC": "",
+        "Calcul": ""
+    }
+]
