@@ -312,7 +312,7 @@ def transform_data(  # noqa: D103
 ) -> None:
     # read data from raw
 
-    with Path(workspace.files_path, "configurations/mappings.json").open(
+    with Path(workspace.files_path, "pipelines/iaso-extract-submissions/configurations/mappings.json").open(
         encoding="utf-8"
     ) as file:
         mapping_df = pl.DataFrame(json.loads(file.read()))
