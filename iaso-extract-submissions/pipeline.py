@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import hashlib
+
 import re
 import unicodedata
 from datetime import datetime
@@ -20,7 +20,7 @@ from openhexa.sdk import (
     pipeline,
     workspace,
 )
-from openhexa.sdk.datasets.dataset import Dataset, DatasetVersion
+
 from openhexa.sdk.pipelines.parameter import IASOWidget
 from openhexa.toolbox.iaso import IASO, dataframe
 from openhexa.toolbox.dhis2 import DHIS2
@@ -81,27 +81,9 @@ CLEAN_PATTERN = re.compile(r"[^\w\s-]")
     ],
 )
 @parameter(
-    "first_dataset_id",
-    type=str,
-    name="First Dataset ID",
-    required=True,
-)
-@parameter(
-    "second_dataset_id",
-    type=str,
-    name="Second Dataset ID",
-    required=True,
-)
-@parameter(
-    "third_dataset_id",
-    type=str,
-    name="Third Dataset ID",
-    required=True,
-)
-@parameter(
     "dhis2_connection",
     type=DHIS2Connection,
-    name="Third DHIS2 Connection",
+    name="DHIS2 Connection",
     required=True,
 )
 @parameter(
@@ -119,9 +101,6 @@ def iaso_extract_submissions(
     choices_to_labels: bool | None,
     output_file_name: str | None,
     output_format: str | None,
-    first_dataset_id: str,
-    second_dataset_id: str,
-    third_dataset_id: str,
     dhis2_connection: DHIS2Connection,
     dry_run: bool,
 ):
@@ -136,7 +115,7 @@ def iaso_extract_submissions(
         dry_run=dry_run,
         max_post=1000,
     )
-    
+
     form_name = get_form_name(iaso_connection, form_id)
     output_file_path = extract_and_load(
         form_id,
@@ -147,14 +126,11 @@ def iaso_extract_submissions(
         form_name,
         iaso_connection,
     )
-    output_file_path = ""
     place_holder = process_and_transform(
         form_name, output_format, output_file_name, output_file_path
     )
 
-    post_to_first_dataset(pusher, dry_run, output_format, place_holder)
-    # post_to_second_dataset(pusher, dry_run, output_format, place_holder)
-    # post_to_third_dataset(pusher, dry_run, output_format, place_holder)
+    post_to_dhis2_task(pusher, dry_run, output_format, place_holder)
 
 
 @iaso_extract_submissions.task
@@ -184,7 +160,6 @@ def extract_and_load(  # noqa: ANN201
             submissions, form_name, output_file_name, output_format, True
         )
         current_run.log_info(f"Data exported to file: `{output_file_path}`")
-
         current_run.log_info("Data extraction successful ✅")
 
         return output_file_path
@@ -203,7 +178,6 @@ def process_and_transform(
     try:
         # process the extracted data
         transform_data(output_format, form_name, output_file_name)
-        current_run.log_info(f"Data exported to file: `{output_file_path}`")
         current_run.log_info("Transformation successful.")
     except Exception as exc:
         current_run.log_error(f"Pipeline failed: {exc}")
@@ -211,25 +185,7 @@ def process_and_transform(
 
 
 @iaso_extract_submissions.task
-def post_to_first_dataset(
-    pusher: DHIS2Pusher, dry_run: bool, output_format: str, place_holder: int
-):
-    """Task to post data to dhis2."""
-    current_run.log_info("Posting data to dhis2.")
-    _post_handler(pusher, dry_run, output_format)
-
-
-@iaso_extract_submissions.task
-def post_to_second_dataset(
-    pusher: DHIS2Pusher, dry_run: bool, output_format: str, place_holder: int
-):
-    """Task to post data to dhis2."""
-    current_run.log_info("Posting data to dhis2.")
-    _post_handler(pusher, dry_run, output_format)
-
-
-@iaso_extract_submissions.task
-def post_to_third_dataset(
+def post_to_dhis2_task(
     pusher: DHIS2Pusher, dry_run: bool, output_format: str, place_holder: int
 ):
     """Task to post data to dhis2."""
@@ -318,9 +274,10 @@ def transform_data(  # noqa: D103
 ) -> None:
     # read data from raw
 
-    with Path(workspace.files_path, "pipelines/iaso-extract-submissions/configurations/mappings.json").open(
-        encoding="utf-8"
-    ) as file:
+    with Path(
+        workspace.files_path,
+        "pipelines/iaso-extract-submissions/configurations/mappings.json",
+    ).open(encoding="utf-8") as file:
         mapping_df = pl.DataFrame(json.loads(file.read()))
 
     folder_path = Path(workspace.files_path, "pipelines/iaso-extract-submissions/raw")
@@ -339,13 +296,11 @@ def transform_data(  # noqa: D103
         # TBD: process only files from a certain region/ province/ ou
 
         supervision = supervision.unpivot(
-            index=["export_id", "periode"],
+            index=["export_id", "periode", "reference_externe"],
             variable_name="data_element",
             value_name="value",
         )
-        supervision = supervision.rename(
-            {"export_id": "organisation_unit_id", "periode": "period"}
-        )
+        supervision = supervision.rename({"periode": "period"})
         supervision = supervision.with_columns(
             pl.col("data_element").str.to_lowercase()
         )
@@ -359,13 +314,23 @@ def transform_data(  # noqa: D103
 
         transformed_data = transformed_data.rename({"COC": "category_option_combo_id"})
 
+        current_period = int(datetime.now().strftime("%Y%m"))
+        transformed_data = transformed_data.filter(pl.col("period") <= current_period)
+        transformed_data = transformed_data.filter(
+            pl.col("reference_externe").is_not_null()
+            & (pl.col("reference_externe").str.strip_chars() != "")  # noqa: PLC1901
+        )
+
+        if transformed_data.is_empty():
+            continue
+
         export_to_file(
             transformed_data.drop_nulls(),
             form_name,
             output_file_name,
             output_format,
             False,
-            transformed_file_path=str(raw_file).replace("raw", "transformed")
+            transformed_file_path=str(raw_file).replace("raw", "transformed"),
         )
 
 
@@ -622,13 +587,17 @@ def export_to_file(
     if raw:
         periods = submissions["periode" if raw else "period"].unique()
         for period in periods:
-            file_name = f"pipelines/iaso-extract-submissions/raw/{output_file_name}_{period}"
+            file_name = (
+                f"pipelines/iaso-extract-submissions/raw/{output_file_name}_{period}"
+            )
             output_file_path = _generate_output_file_path(
                 form_name=form_name,
                 output_file_name=file_name,
                 output_format=output_format,
             )
-            current_run.log_info(f"Exporting submissions fiile to: `{output_file_path}`")
+            current_run.log_info(
+                f"Exporting submissions fiile to: `{output_file_path}`"
+            )
             period_submission = submissions.filter(
                 pl.col("periode" if raw else "period") == period
             )
@@ -697,8 +666,7 @@ def prepare_data_value_payload(data_values: pl.DataFrame) -> list[dict[str, Any]
         "organisation_unit_id": "orgUnit",
         "period": "period",
         "category_option_combo_id": "categoryOptionCombo",
-        "value": "value",
-        # "attribute_option_combo_id": "attributeOptionCombo",
+        "value": "value"
     }
 
     # Check for required columns
@@ -721,51 +689,6 @@ def prepare_data_value_payload(data_values: pl.DataFrame) -> list[dict[str, Any]
             item["value"] = str(item["value"])
             valid_payload.append(item)
     return valid_payload
-
-
-def export_to_database(submissions: pl.DataFrame, table_name: str, mode: str) -> None:
-    """Saves form submissions to a database.
-
-    Args:
-        submissions: DataFrame containing the form submissions.
-        table_name: Name of the database table where submissions will be saved.
-        mode: Mode to use when saving the table (replace or append).
-    """
-    if _validate_schema(submissions, table_name):
-        mode = mode or "replace"
-        submissions.write_database(
-            table_name=table_name,
-            connection=workspace.database_url,
-            if_table_exists=mode,
-        )
-        current_run.add_database_output(table_name)
-        current_run.log_info(
-            f"Form submissions saved to database {len(submissions)} rows into `{table_name}`"
-        )
-
-
-def export_to_dataset(file_path: Path, dataset: Dataset | None) -> None:
-    """Saves form submissions to the specified dataset.
-
-    Args:
-        file_path (Path): The path to the file containing the submissions data.
-        dataset (Dataset): The dataset where the submissions will be stored.
-    """
-    latest_version = dataset.latest_version
-    if bool(latest_version) and in_dataset_version(file_path, latest_version):
-        current_run.log_info(
-            f"Form submissions file `{file_path.name}` already exists in dataset version "
-            f"`{latest_version.name}` and no changes have been detected"
-        )
-        return
-
-    version_number = int(latest_version.name.lstrip("v")) + 1 if latest_version else 1
-    version = dataset.create_version(f"v{version_number}")
-    version.add_file(file_path, file_path.name)
-    current_run.log_info(
-        f"Form submissions file `{file_path.name}` successfully added to {dataset.name} "
-        f"dataset in version `{version.name}`"
-    )
 
 
 def _process_submissions(submissions: pl.DataFrame) -> pl.DataFrame:
@@ -800,42 +723,6 @@ def _process_submissions(submissions: pl.DataFrame) -> pl.DataFrame:
     )
 
     return submissions.select(sorted(submissions.columns)).sort(submissions.columns)
-
-
-def _validate_schema(submissions: pl.DataFrame, table_name: str) -> bool:
-    """Validate the schema of the submissions DataFrame against the database table.
-
-    Args:
-        submissions: The submissions DataFrame to validate.
-        table_name: Name of the database table to validate against.
-
-    Returns:
-        bool: True if schema is valid
-    """
-    db_table_columns = (
-        pl.read_database_uri(
-            query=(
-                f"select column_name from information_schema.columns "
-                f"where table_name='{table_name}'"
-            ),
-            uri=workspace.database_url,
-        )
-        .select("column_name")
-        .to_series()
-        .to_list()
-    )
-    if (
-        db_table_columns
-        and set(submissions.columns).issubset(set(db_table_columns))
-        and len(submissions.columns) > len(db_table_columns)
-    ):
-        msg = (
-            f"Schema mismatch: New columns {set(submissions.columns) - set(db_table_columns)} "
-            "not present in existing table"
-        )
-        current_run.log_critical(msg)
-        return False
-    return True
 
 
 def _generate_output_file_path(
@@ -893,41 +780,6 @@ def clean_string(input_str: str) -> str:
     cleaned = "".join(c for c in normalized if not unicodedata.combining(c))
     sanitized = CLEAN_PATTERN.sub("", cleaned)
     return sanitized.strip().replace(" ", "_").lower()
-
-
-def sha256_of_file(file_path: Path) -> str:
-    """Calculate the SHA-256 hash of a file.
-
-    Args:
-        file_path (Path): Path to the file.
-
-    Returns:
-        str: SHA-256 hash of the file content.
-    """
-    hasher = hashlib.sha256()
-    with file_path.open("rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            hasher.update(chunk)
-    return hasher.hexdigest()
-
-
-def in_dataset_version(file_path: Path, dataset_version: DatasetVersion) -> bool:
-    """Check if a file is in the specified dataset version.
-
-    Args:
-        file_path (Path): Path to the file.
-        dataset_version (DatasetVersion): The dataset version to check against.
-
-    Returns:
-        bool: True if the file is in the dataset version, False otherwise.
-    """
-    file_hash = sha256_of_file(file_path)
-    for file in dataset_version.files:
-        remote_hash = hashlib.sha256()
-        remote_hash.update(file.read())
-        if file_hash == remote_hash.hexdigest():
-            return True
-    return False
 
 
 if __name__ == "__main__":
