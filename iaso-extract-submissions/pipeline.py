@@ -147,6 +147,7 @@ def iaso_extract_submissions(
         form_name,
         iaso_connection,
     )
+    output_file_path = ""
     place_holder = process_and_transform(
         form_name, output_format, output_file_name, output_file_path
     )
@@ -180,7 +181,7 @@ def extract_and_load(  # noqa: ANN201
         submissions = process_choices(submissions, choices_to_labels, iaso, form_id)
         submissions = deduplicate_columns(submissions)
         output_file_path = export_to_file(
-            submissions, form_name, output_file_name, output_format
+            submissions, form_name, output_file_name, output_format, True
         )
         current_run.log_info(f"Data exported to file: `{output_file_path}`")
 
@@ -198,10 +199,12 @@ def process_and_transform(
     form_name: str, output_format: str, output_file_name: str, output_file_path: str
 ):
     """Task to process the data saved in the workspace."""
+    current_run.log_info("Processing and transforming data.")
     try:
         # process the extracted data
         transform_data(output_format, form_name, output_file_name)
         current_run.log_info(f"Data exported to file: `{output_file_path}`")
+        current_run.log_info("Transformation successful.")
     except Exception as exc:
         current_run.log_error(f"Pipeline failed: {exc}")
         raise
@@ -212,6 +215,7 @@ def post_to_first_dataset(
     pusher: DHIS2Pusher, dry_run: bool, output_format: str, place_holder: int
 ):
     """Task to post data to dhis2."""
+    current_run.log_info("Posting data to dhis2.")
     _post_handler(pusher, dry_run, output_format)
 
 
@@ -220,6 +224,7 @@ def post_to_second_dataset(
     pusher: DHIS2Pusher, dry_run: bool, output_format: str, place_holder: int
 ):
     """Task to post data to dhis2."""
+    current_run.log_info("Posting data to dhis2.")
     _post_handler(pusher, dry_run, output_format)
 
 
@@ -228,6 +233,7 @@ def post_to_third_dataset(
     pusher: DHIS2Pusher, dry_run: bool, output_format: str, place_holder: int
 ):
     """Task to post data to dhis2."""
+    current_run.log_info("Posting data to dhis2.")
     _post_handler(pusher, dry_run, output_format)
 
 
@@ -317,7 +323,7 @@ def transform_data(  # noqa: D103
     ) as file:
         mapping_df = pl.DataFrame(json.loads(file.read()))
 
-    folder_path = Path(workspace.files_path, "raw")
+    folder_path = Path(workspace.files_path, "pipelines/iaso-extract-submissions/raw")
 
     for raw_file in list(folder_path.glob(f"*{output_format}")):
         if output_format == ".csv":
@@ -358,7 +364,8 @@ def transform_data(  # noqa: D103
             form_name,
             output_file_name,
             output_format,
-            raw=False,
+            False,
+            transformed_file_path=str(raw_file).replace("raw", "transformed")
         )
 
 
@@ -595,7 +602,8 @@ def export_to_file(
     form_name: str,
     output_file_name: str,
     output_format: str,
-    raw: bool = True,
+    raw: bool,
+    transformed_file_path: str = ""
 ) -> Path:
     """Export submissions data to specified file format.
 
@@ -606,34 +614,49 @@ def export_to_file(
             `iaso-pipelines/extract-submissions/form_<form_name>.<output_format>`.
         output_format: File format extension for the output file.
         raw: Bolean to determine whether to write files in raw or transformed directories
+        transformed_file_path: str path to the transformed file
 
     Returns:
         Path: The path to the exported file.
     """
-    periods = submissions["periode" if raw else "period"].unique()
-    for period in periods:
+    if raw:
+        periods = submissions["periode" if raw else "period"].unique()
+        for period in periods:
+            file_name = f"pipelines/iaso-extract-submissions/raw/{output_file_name}_{period}"
+            output_file_path = _generate_output_file_path(
+                form_name=form_name,
+                output_file_name=file_name,
+                output_format=output_format,
+            )
+            current_run.log_info(f"Exporting submissions fiile to: `{output_file_path}`")
+            period_submission = submissions.filter(
+                pl.col("periode" if raw else "period") == period
+            )
+            if output_format == ".csv":
+                period_submission.write_csv(output_file_path)
+            elif output_format == ".parquet":
+                period_submission.write_parquet(output_file_path)
+            else:
+                period_submission.to_pandas().to_excel(output_file_path, index=False)
+
+            fpath = output_file_path.as_posix()
+            current_run.add_file_output(fpath)
+    else:
+        file_name = f"{transformed_file_path}"
         output_file_path = _generate_output_file_path(
             form_name=form_name,
-            output_file_name=(
-                f"pipelines/iaso-extract-submissions/raw/{output_file_name}_{period}"
-                if raw
-                else f"pipelines/iaso-extract-submissions/transformed/{output_file_name}_{period}"
-            ),
+            output_file_name=file_name,
             output_format=output_format,
         )
-        current_run.log_info(f"Exporting submissions fiile to: `{output_file_path}`")
-        period_submission = submissions.filter(
-            pl.col("periode" if raw else "period") == period
-        )
         if output_format == ".csv":
-            period_submission.write_csv(output_file_path)
+            submissions.write_csv(output_file_path)
         elif output_format == ".parquet":
-            period_submission.write_parquet(output_file_path)
+            submissions.write_parquet(output_file_path)
         else:
-            period_submission.to_pandas().to_excel(output_file_path, index=False)
+            submissions.to_pandas().to_excel(output_file_path, index=False)
 
-        # fpath = output_file_path.as_posix()
-        # current_run.add_file_output(fpath)
+        fpath = output_file_path.as_posix()
+        current_run.add_file_output(fpath)
     return output_file_path
 
 
@@ -693,7 +716,6 @@ def prepare_data_value_payload(data_values: pl.DataFrame) -> list[dict[str, Any]
     valid_payload = []
     for item in payload:
         if any([value is None for value in item.values()]):
-            print(f"Skipping item with None values: {item}")
             continue  # Skip items with None values
         if "value" in item and item["value"] is not None:
             item["value"] = str(item["value"])
