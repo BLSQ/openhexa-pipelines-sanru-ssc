@@ -300,7 +300,6 @@ def transform_data(  # noqa: D103
             variable_name="data_element",
             value_name="value",
         )
-        supervision = supervision.rename({"periode": "period"})
         supervision = supervision.with_columns(
             pl.col("data_element").str.to_lowercase()
         )
@@ -310,15 +309,38 @@ def transform_data(  # noqa: D103
             mapping_df, left_on="data_element", right_on="name", how="left"
         )
 
-        transformed_data = transformed_data.drop(["Calcul", "data_element", "CC"])
+        transformed_data = transformed_data.drop(["Calcul", "data_element", "CC", "export_id"])
+        transformed_data = transformed_data.rename({
+            "periode": "PERIOD",
+            "reference_externe": "ORG_UNIT",
+            "data_element_id": "DX_UID",
+            "value": "VALUE",
+            "COC": "CATEGORY_OPTION_COMBO"
+        })
 
-        transformed_data = transformed_data.rename({"COC": "category_option_combo_id"})
+        transformed_data = transformed_data.with_columns(
+            pl.lit("DATA_ELEMENT").alias("DATA_TYPE")
+            )
+        
+        transformed_data = transformed_data.with_columns(
+            pl.when(
+                pl.col("CATEGORY_OPTION_COMBO").is_null() |
+                (pl.col("CATEGORY_OPTION_COMBO") == "")  # noqa: PLC1901
+                )
+            .then(pl.lit("HllvX50cXC0"))
+            .otherwise(pl.col("CATEGORY_OPTION_COMBO"))
+            .alias("CATEGORY_OPTION_COMBO")
+            )
+
+        transformed_data = transformed_data.with_columns(
+            pl.lit("HllvX50cXC0").alias("ATTRIBUTE_OPTION_COMBO")
+            )
 
         current_period = int(datetime.now().strftime("%Y%m"))
-        transformed_data = transformed_data.filter(pl.col("period") <= current_period)
+        transformed_data = transformed_data.filter(pl.col("PERIOD") <= current_period)
         transformed_data = transformed_data.filter(
-            pl.col("reference_externe").is_not_null()
-            & (pl.col("reference_externe").str.strip_chars() != "")  # noqa: PLC1901
+            pl.col("ORG_UNIT").is_not_null()
+            & (pl.col("ORG_UNIT").str.strip_chars() != "")  # noqa: PLC1901
         )
 
         if transformed_data.is_empty():
@@ -663,7 +685,7 @@ def prepare_data_value_payload(data_values: pl.DataFrame) -> list[dict[str, Any]
     """
     mapping_toolbox_dhis2_name = {
         "data_element_id": "dataElement",
-        "organisation_unit_id": "orgUnit",
+        "reference_externe": "orgUnit",
         "period": "period",
         "category_option_combo_id": "categoryOptionCombo",
         "value": "value"
