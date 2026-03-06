@@ -47,7 +47,9 @@ class OrgUnitObj:  # noqa: PLW1641 (no hashing)
         elif isinstance(org_unit, tuple) and hasattr(org_unit, "_fields"):
             org_unit = OrgUnitRow(**org_unit._asdict())
         elif not isinstance(org_unit, OrgUnitRow):
-            raise TypeError(f"Expected OrgUnitRow, pd.Series, or tuple, got {type(org_unit)}")
+            raise TypeError(
+                f"Expected OrgUnitRow, pd.Series, or tuple, got {type(org_unit)}"
+            )
 
         self.initialize_from(org_unit_tuple=org_unit)
 

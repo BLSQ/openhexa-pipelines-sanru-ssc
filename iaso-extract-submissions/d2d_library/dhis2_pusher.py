@@ -22,7 +22,9 @@ class DHIS2Pusher:
     ):
         self.dhis2_client = dhis2_client
         if import_strategy not in {"CREATE", "UPDATE", "CREATE_AND_UPDATE"}:
-            raise ValueError("Invalid import strategy (use 'CREATE', 'UPDATE' or 'CREATE_AND_UPDATE')")
+            raise ValueError(
+                "Invalid import strategy (use 'CREATE', 'UPDATE' or 'CREATE_AND_UPDATE')"
+            )
         self.import_strategy = import_strategy
         self.dry_run = dry_run
         self.max_post = max_post
@@ -39,7 +41,9 @@ class DHIS2Pusher:
         self._push_removals(to_delete)
         self._log_ignored_or_na(to_ignore)
 
-    def _classify_data_points(self, data_values: pd.DataFrame) -> tuple[list, list, list]:
+    def _classify_data_points(
+        self, data_values: pd.DataFrame
+    ) -> tuple[list, list, list]:
         if data_values.empty:
             current_run.log_warning("No data to push.")
             return [], [], []
@@ -68,7 +72,9 @@ class DHIS2Pusher:
         current_run.log_info(msg)
         self.logger.info(msg)
 
-        summary = self._push_data_points(data_point_list=data_points_valid, logging_interval=50000)
+        summary = self._push_data_points(
+            data_point_list=data_points_valid, logging_interval=50000
+        )
         msg = f"Data points push summary:  {summary['import_counts']}"
         current_run.log_info(msg)
         self.logger.info(msg)
@@ -79,12 +85,20 @@ class DHIS2Pusher:
             # current_run.log_info("No NA data points to push.")
             return
 
-        current_run.log_info(f"Pushing {len(data_points_to_remove)} data points with NA values.")
-        self.logger.info(f"Pushing {len(data_points_to_remove)} data points with NA values.")
+        current_run.log_info(
+            f"Pushing {len(data_points_to_remove)} data points with NA values."
+        )
+        self.logger.info(
+            f"Pushing {len(data_points_to_remove)} data points with NA values."
+        )
         self._log_ignored_or_na(data_points_to_remove, is_na=True)
-        summary_na = self._push_data_points(data_point_list=data_points_to_remove, logging_interval=50000)
+        summary_na = self._push_data_points(
+            data_point_list=data_points_to_remove, logging_interval=50000
+        )
 
-        current_run.log_info(f"Data points delete summary: {summary_na['import_counts']}")
+        current_run.log_info(
+            f"Data points delete summary: {summary_na['import_counts']}"
+        )
         self.logger.info(f"Data points delete summary: {summary_na['import_counts']}")
         self._log_summary_errors(summary_na)
 
@@ -95,9 +109,13 @@ class DHIS2Pusher:
                 f"{len(data_point_list)} data points will be  {'updated to NA' if is_na else 'ignored'}. "
                 "Please check the last execution report for details."
             )
-            self.logger.warning(f"{len(data_point_list)} data points to be {'updated to NA' if is_na else 'ignored'}: ")
+            self.logger.warning(
+                f"{len(data_point_list)} data points to be {'updated to NA' if is_na else 'ignored'}: "
+            )
             for i, ignored in enumerate(data_point_list, start=1):
-                self.logger.warning(f"{i} Data point {'NA' if is_na else 'ignored'} : {ignored}")
+                self.logger.warning(
+                    f"{i} Data point {'NA' if is_na else 'ignored'} : {ignored}"
+                )
 
     def _log_summary_errors(self, summary: dict):
         """Logs all the errors in the summary dictionary using the configured logging.
@@ -113,7 +131,9 @@ class DHIS2Pusher:
             for i_e, error in enumerate(errors, start=1):
                 error_value = error.get("value", None)
                 error_code = error.get("errorCode", None)
-                self.logger.error(f"Error {i_e} value: {error_value} (DHSI2 errorCode: {error_code})")
+                self.logger.error(
+                    f"Error {i_e} value: {error_value} (DHSI2 errorCode: {error_code})"
+                )
                 error_response = error.get("response", None)  # if any (⊙_☉)
                 if error_response:
                     rejected_list = error_response.pop("rejected_datapoints", [])
@@ -162,7 +182,9 @@ class DHIS2Pusher:
                     self._update_import_counts(summary, response)
 
                 # Always capture conflicts/errorReports if present
-                errors = response.get("conflicts", []) + response.get("errorReports", [])
+                errors = response.get("conflicts", []) + response.get(
+                    "errorReports", []
+                )
                 if errors:
                     summary["ERRORS"].extend(errors)
 
@@ -176,7 +198,10 @@ class DHIS2Pusher:
             processed_points += len(chunk)
 
             # Log every logging_interval points
-            if processed_points // logging_interval > (processed_points - len(chunk)) // logging_interval:
+            if (
+                processed_points // logging_interval
+                > (processed_points - len(chunk)) // logging_interval
+            ):
                 current_run.log_info(
                     f"{processed_points} / {total_data_points} data points pushed summary: {summary['import_counts']}"
                 )
@@ -196,7 +221,9 @@ class DHIS2Pusher:
         for i in range(0, len(src_list), length):
             yield src_list[i : i + length]
 
-    def _get_response_value_errors(self, response: requests.Response, chunk: list | None) -> dict | None:
+    def _get_response_value_errors(
+        self, response: requests.Response, chunk: list | None
+    ) -> dict | None:
         """Collect relevant data for error logs.
 
         Returns:
@@ -210,7 +237,13 @@ class DHIS2Pusher:
 
         try:
             out = {}
-            for k in ["responseType", "status", "description", "importCount", "dataSetComplete"]:
+            for k in [
+                "responseType",
+                "status",
+                "description",
+                "importCount",
+                "dataSetComplete",
+            ]:
                 out[k] = response.get(k)
             if response.get("conflicts"):
                 out["rejected_datapoints"] = []

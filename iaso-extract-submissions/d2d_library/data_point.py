@@ -80,7 +80,13 @@ class DataPoint:
             True if all relevant attributes are not None, False otherwise.
         """
         # List of attributes to check, optionally excluding the 'value' attribute
-        attributes = [self.dataElement, self.period, self.orgUnit, self.categoryOptionCombo, self.attributeOptionCombo]
+        attributes = [
+            self.dataElement,
+            self.period,
+            self.orgUnit,
+            self.categoryOptionCombo,
+            self.attributeOptionCombo,
+        ]
         if not exclude_value:
             attributes.append(self.value)
 

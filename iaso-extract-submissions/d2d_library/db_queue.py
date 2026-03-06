@@ -102,7 +102,9 @@ class Queue:
         """Clear all contents from the queue and reset the indexing."""
         with self._lock, sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute("DROP TABLE IF EXISTS queue;")  # Drop table to reset indexing
+            cursor.execute(
+                "DROP TABLE IF EXISTS queue;"
+            )  # Drop table to reset indexing
             conn.commit()
         # Recreate table
         self._initialize_queue()
