@@ -1,0 +1,8 @@
+{
+    "form_id": 858,
+    "choices_to_labels": true,
+    "output_file_name": "ssc_supervision_v3_file",
+    "output_format": ".parquet",
+    "iaso_connection": "iaso-ssc-ihp-claire",
+    "dhis2_connection": "snis-sp-claire-api"
+}

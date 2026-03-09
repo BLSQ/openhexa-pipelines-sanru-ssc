@@ -21,7 +21,6 @@ from openhexa.sdk import (
     workspace,
 )
 
-from openhexa.sdk.pipelines.parameter import IASOWidget
 from openhexa.toolbox.iaso import IASO, dataframe
 from openhexa.toolbox.dhis2 import DHIS2
 from d2d_library.dhis2_pusher import DHIS2Pusher
@@ -30,18 +29,7 @@ from d2d_library.dhis2_pusher import DHIS2Pusher
 CLEAN_PATTERN = re.compile(r"[^\w\s-]")
 
 
-@pipeline("iaso_extract_submissions")
-@parameter(
-    "iaso_connection", name="IASO connection", type=IASOConnection, required=True
-)
-@parameter(
-    "form_id",
-    name="Form ID",
-    type=int,
-    widget=IASOWidget.IASO_FORMS,
-    connection="iaso_connection",
-    required=True,
-)
+@pipeline("iaso_extract_submissions", timeout=43200)
 @parameter(
     "last_updated",
     name="Last Updated Date",
@@ -50,71 +38,60 @@ CLEAN_PATTERN = re.compile(r"[^\w\s-]")
     help="ISO formatted date (YYYY-MM-DD) for incremental data extraction",
 )
 @parameter(
-    "choices_to_labels",
-    name="Convert Choices to Labels",
-    type=bool,
-    default=True,
-    required=False,
-    help="Replace choice codes with labels",
-)
-@parameter(
-    code="output_file_name",
-    type=str,
-    name="Path and base name of the output file (without extension)",
-    help=(
-        "Path and base name of the output file (without extension) in the workspace files directory"
-        "(default if ou_id is defined: "
-        "`iaso-pipelines/extract-submissions/<form_name>.<output_format>`"
-    ),
-    required=False,
-)
-@parameter(
-    code="output_format",
-    type=str,
-    name="File format to use for exporting the data",
-    required=False,
-    default=".parquet",
-    choices=[
-        ".csv",
-        ".parquet",
-        ".xlsx",
-    ],
-)
-@parameter(
-    "dhis2_connection",
-    type=DHIS2Connection,
-    name="DHIS2 Connection",
-    required=True,
-)
-@parameter(
     "dry_run",
-    name="Output Dataset",
+    name="Dry Run importation to DHIS2",
     type=bool,
     required=False,
     default=False,
-    help="Target OpenHEXA dataset for storing submissions file",
+    help="Test run while making sure data is not written on target.",
+)
+@parameter(
+    "extract",
+    name="Extract",
+    type=bool,
+    required=True,
+    default=True,
+    help="Run extraction of data from IASO",
+)
+@parameter(
+    "transform",
+    name="Transform",
+    type=bool,
+    required=True,
+    default=True,
+    help="Run transformation of data already extraacted from IASO",
+)
+@parameter(
+    "post_to_dhis2",
+    name="Post to DHIS2",
+    type=bool,
+    required=True,
+    default=True,
+    help="Run pushing of transformed data to DHIS2",
 )
 def iaso_extract_submissions(
-    iaso_connection: IASOConnection,
-    form_id: int,
     last_updated: str | None,
-    choices_to_labels: bool | None,
-    output_file_name: str | None,
-    output_format: str | None,
-    dhis2_connection: DHIS2Connection,
     dry_run: bool,
+    extract: bool,
+    transform: bool,
+    post_to_dhis2: bool
 ):
     """Pipeline orchestration function for extracting and processing form submissions."""
     current_run.log_info("Starting form submissions extraction pipeline")
 
-    # initialize_target dhis2 instance
-    dhis2 = validate_connections(dhis2_connection)
-    pusher = DHIS2Pusher(
-        dhis2_client=dhis2,
-        import_strategy="CREATE_AND_UPDATE",
-        dry_run=dry_run,
-        max_post=1000,
-    )
+    # read default cofigurations tailored to this pipeline
+    with Path(
+        workspace.files_path,
+        "pipelines/iaso-extract-submissions/configurations/default_values.json",
+    ).open(encoding="utf-8") as file:
+        configurations = json.loads(file.read())
+    form_id = configurations["form_id"]
+    choices_to_labels = configurations["choices_to_labels"]
+    output_file_name = configurations["output_file_name"]
+    output_format = configurations["output_format"]
+
+    dhis2_connection = workspace.dhis2_connection(configurations["dhis2_connection"])
+    iaso_connection = workspace.iaso_connection(configurations["iaso_connection"])
 
     form_name = get_form_name(iaso_connection, form_id)
     output_file_path = extract_and_load(
@@ -125,12 +102,13 @@ def iaso_extract_submissions(
         output_format,
         form_name,
         iaso_connection,
+        extract
     )
     place_holder = process_and_transform(
-        form_name, output_format, output_file_name, output_file_path
+        form_name, output_format, output_file_name, output_file_path, transform
     )
 
-    post_to_dhis2_task(pusher, dry_run, output_format, place_holder)
+    post_to_dhis2_task(dhis2_connection, dry_run, output_format, place_holder, post_to_dhis2)
 
 
 @iaso_extract_submissions.task
@@ -142,6 +120,7 @@ def extract_and_load(  # noqa: ANN201
     output_format: str,
     form_name: str,
     iaso_connection: IASO,
+    extract: bool
 ):
     """Task to extract and save data to the workspace.
 
@@ -149,6 +128,10 @@ def extract_and_load(  # noqa: ANN201
     ________
         output_file_path str: Path to where data is saved
     """
+    if not extract:
+        current_run.log_info("Skipping data extraction task.")
+        return None
+
     try:
 
         cutoff_date = parse_cutoff_date(last_updated)
@@ -171,9 +154,13 @@ def extract_and_load(  # noqa: ANN201
 
 @iaso_extract_submissions.task
 def process_and_transform(
-    form_name: str, output_format: str, output_file_name: str, output_file_path: str
+    form_name: str, output_format: str, output_file_name: str, output_file_path: str, transform: str
 ):
     """Task to process the data saved in the workspace."""
+    if not transform:
+        current_run.log_info("Skipping data transform task.")
+        return
+
     current_run.log_info("Processing and transforming data.")
     try:
         # process the extracted data
@@ -186,15 +173,27 @@ def process_and_transform(
 
 @iaso_extract_submissions.task
 def post_to_dhis2_task(
-    pusher: DHIS2Pusher, dry_run: bool, output_format: str, place_holder: int
+    dhis2_connection: DHIS2Connection, dry_run: bool, output_format: str, place_holder: int, post_to_dhis2: bool
 ):
     """Task to post data to dhis2."""
+    if not post_to_dhis2:
+        current_run.log_info("Skipping posting data to taarget DHIS2 instance.")
+        return
+
     current_run.log_info("Posting data to dhis2.")
-    _post_handler(pusher, dry_run, output_format)
+    _post_handler(dhis2_connection, dry_run, output_format)
 
 
-def _post_handler(pusher: DHIS2Pusher, dry_run: bool, output_format: str):
-    folder_path = Path(workspace.files_path, "transformed")
+def _post_handler(dhis2_connection: DHIS2Connection, dry_run: bool, output_format: str):
+    # initialize_target dhis2_connectiont dhis2 instance
+    target_dhis2_instance = validate_connections(dhis2_connection)
+    pusher = DHIS2Pusher(
+        dhis2_client=target_dhis2_instance,
+        import_strategy="CREATE_AND_UPDATE",
+        dry_run=dry_run,
+        max_post=1000,
+    )
+    folder_path = Path(workspace.files_path, "pipelines/iaso-extract-submissions/transformed")
     for transformed_file in list(folder_path.glob(f"*{output_format}")):
         if output_format == ".csv":
             transformed_data = pl.read_csv(
@@ -232,7 +231,8 @@ def validate_connections(
     # Test source connection
     try:
         dhis2.ping()
-        current_run.log_info(f"✓ Source DHIS2 connection successful: {dhis2.api.url}")
+        msg = f"✓ Source DHIS2 connection successful: {dhis2.api.url}"
+        current_run.log_info(msg)
     except Exception as e:
         current_run.log_error(f"✗ Source DHIS2 connection failed: {e!s}")
         raise
@@ -342,7 +342,13 @@ def transform_data(  # noqa: D103
             pl.col("ORG_UNIT").is_not_null()
             & (pl.col("ORG_UNIT").str.strip_chars() != "")  # noqa: PLC1901
         )
-
+        # remove unmapped org units
+        transformed_data = transformed_data.filter(
+            ~pl.col("ORG_UNIT").str.starts_with("iaso#")
+        )
+        transformed_data = transformed_data.filter(
+            ~pl.col("ORG_UNIT").str.starts_with("ssc")
+        )
         if transformed_data.is_empty():
             continue
 
@@ -630,8 +636,8 @@ def export_to_file(
             else:
                 period_submission.to_pandas().to_excel(output_file_path, index=False)
 
-            fpath = output_file_path.as_posix()
-            current_run.add_file_output(fpath)
+            # fpath = output_file_path.as_posix()
+            # current_run.add_file_output(fpath)
     else:
         file_name = f"{transformed_file_path}"
         output_file_path = _generate_output_file_path(
@@ -646,8 +652,8 @@ def export_to_file(
         else:
             submissions.to_pandas().to_excel(output_file_path, index=False)
 
-        fpath = output_file_path.as_posix()
-        current_run.add_file_output(fpath)
+        # fpath = output_file_path.as_posix()
+        # current_run.add_file_output(fpath)
     return output_file_path
 
 
@@ -667,7 +673,7 @@ def post_to_dhis2(
         payload = prepare_data_value_payload(transformed_data)
         current_run.log_info(f"Prepared {len(payload)} data values for posting")
         # Post data
-        pusher.push_data(df_data=transformed_data.to_pandas())
+        pusher.push_data(df_data=payload.to_pandas())
         # Log results
         current_run.log_info("✓ Data posting completed")
 
@@ -684,11 +690,13 @@ def prepare_data_value_payload(data_values: pl.DataFrame) -> list[dict[str, Any]
         list[dict[str, Any]]: List of data value dictionaries for API.
     """
     mapping_toolbox_dhis2_name = {
-        "data_element_id": "dataElement",
-        "reference_externe": "orgUnit",
-        "period": "period",
-        "category_option_combo_id": "categoryOptionCombo",
-        "value": "value"
+        "DX_UID": "dataElement",
+        "ORG_UNIT": "orgUnit",
+        "PERIOD": "period",
+        "CATEGORY_OPTION_COMBO": "categoryOptionCombo",
+        "VALUE": "value",
+        "DATA_TYPE": "dataType",
+        "ATTRIBUTE_OPTION_COMBO": "attributeOptionCombo"
     }
 
     # Check for required columns
@@ -700,17 +708,7 @@ def prepare_data_value_payload(data_values: pl.DataFrame) -> list[dict[str, Any]
         raise ValueError(f"Missing required columns: {missing_columns}")
     data_values = data_values.rename(mapping_toolbox_dhis2_name)
     # Convert to dictionaries
-    payload = data_values.select(list(mapping_toolbox_dhis2_name.values())).to_dicts()
-
-    # Convert values to strings as required by DHIS2
-    valid_payload = []
-    for item in payload:
-        if any([value is None for value in item.values()]):
-            continue  # Skip items with None values
-        if "value" in item and item["value"] is not None:
-            item["value"] = str(item["value"])
-            valid_payload.append(item)
-    return valid_payload
+    return data_values.select(list(mapping_toolbox_dhis2_name.values()))
 
 
 def _process_submissions(submissions: pl.DataFrame) -> pl.DataFrame:
