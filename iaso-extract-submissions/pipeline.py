@@ -29,7 +29,7 @@ from d2d_library.dhis2_pusher import DHIS2Pusher
 CLEAN_PATTERN = re.compile(r"[^\w\s-]")
 
 
-@pipeline("iaso_extract_submissions", timeout=43200)
+@pipeline("sanru_iaso_to_dhis2", timeout=43200)
 @parameter(
     "last_updated",
     name="Last Updated Date",
@@ -69,7 +69,7 @@ CLEAN_PATTERN = re.compile(r"[^\w\s-]")
     default=True,
     help="Run pushing of transformed data to DHIS2",
 )
-def iaso_extract_submissions(
+def sanru_iaso_to_dhis2(
     last_updated: str | None,
     dry_run: bool,
     extract: bool,
@@ -82,7 +82,7 @@ def iaso_extract_submissions(
     # read default cofigurations tailored to this pipeline
     with Path(
         workspace.files_path,
-        "pipelines/iaso-extract-submissions/configurations/default_values.json",
+        "pipelines/sanru-iaso-to-dhis2/configurations/default_values.json",
     ).open(encoding="utf-8") as file:
         configurations = json.loads(file.read())
     form_id = configurations["form_id"]
@@ -111,7 +111,7 @@ def iaso_extract_submissions(
     post_to_dhis2_task(dhis2_connection, dry_run, output_format, place_holder, post_to_dhis2)
 
 
-@iaso_extract_submissions.task
+@sanru_iaso_to_dhis2.task
 def extract_and_load(  # noqa: ANN201
     form_id: str,
     last_updated: str,
@@ -152,7 +152,7 @@ def extract_and_load(  # noqa: ANN201
         raise
 
 
-@iaso_extract_submissions.task
+@sanru_iaso_to_dhis2.task
 def process_and_transform(
     form_name: str, output_format: str, output_file_name: str, output_file_path: str, transform: str
 ):
@@ -171,7 +171,7 @@ def process_and_transform(
         raise
 
 
-@iaso_extract_submissions.task
+@sanru_iaso_to_dhis2.task
 def post_to_dhis2_task(
     dhis2_connection: DHIS2Connection, dry_run: bool, output_format: str, place_holder: int, post_to_dhis2: bool
 ):
@@ -193,7 +193,7 @@ def _post_handler(dhis2_connection: DHIS2Connection, dry_run: bool, output_forma
         dry_run=dry_run,
         max_post=1000,
     )
-    folder_path = Path(workspace.files_path, "pipelines/iaso-extract-submissions/transformed")
+    folder_path = Path(workspace.files_path, "pipelines/sanru-iaso-to-dhis2/transformed")
     for transformed_file in list(folder_path.glob(f"*{output_format}")):
         if output_format == ".csv":
             transformed_data = pl.read_csv(
@@ -276,11 +276,11 @@ def transform_data(  # noqa: D103
 
     with Path(
         workspace.files_path,
-        "pipelines/iaso-extract-submissions/configurations/mappings.json",
+        "pipelines/sanru-iaso-to-dhis2/configurations/mappings.json",
     ).open(encoding="utf-8") as file:
         mapping_df = pl.DataFrame(json.loads(file.read()))
 
-    folder_path = Path(workspace.files_path, "pipelines/iaso-extract-submissions/raw")
+    folder_path = Path(workspace.files_path, "pipelines/sanru-iaso-to-dhis2/raw")
 
     for raw_file in list(folder_path.glob(f"*{output_format}")):
         if output_format == ".csv":
@@ -616,7 +616,7 @@ def export_to_file(
         periods = submissions["periode" if raw else "period"].unique()
         for period in periods:
             file_name = (
-                f"pipelines/iaso-extract-submissions/raw/{output_file_name}_{period}"
+                f"pipelines/sanru-iaso-to-dhis2/raw/{output_file_name}_{period}"
             )
             output_file_path = _generate_output_file_path(
                 form_name=form_name,
@@ -803,4 +803,4 @@ def clean_string(input_str: str) -> str:
 
 
 if __name__ == "__main__":
-    iaso_extract_submissions()
+    sanru_iaso_to_dhis2()
