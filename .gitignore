@@ -210,3 +210,4 @@ __marimo__/
 *.parquet
 *workspace.yaml
 *.DS_Store
+*.db
