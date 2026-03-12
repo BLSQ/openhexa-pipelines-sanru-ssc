@@ -10,7 +10,7 @@ from io import StringIO
 from pathlib import Path
 import json
 from typing import Any
-
+import sqlite3
 import polars as pl
 from openhexa.sdk import (
     DHIS2Connection,
@@ -69,15 +69,36 @@ CLEAN_PATTERN = re.compile(r"[^\w\s-]")
     default=True,
     help="Run pushing of transformed data to DHIS2",
 )
+@parameter(
+    "period_to_run",
+    name="Period to run",
+    type=int,
+    required=False,
+    help="A particular period you would like the pipeline to run",
+)
+@parameter(
+    "clear_previous_runs",
+    name="Clear previous runs",
+    type=bool,
+    required=True,
+    default=True,
+    help="Remove previous runs from cache in order to rerun them",
+)
 def sanru_iaso_to_dhis2(
     last_updated: str | None,
     dry_run: bool,
     extract: bool,
     transform: bool,
-    post_to_dhis2: bool
+    post_to_dhis2: bool,
+    period_to_run: int | None,
+    clear_previous_runs: bool,
 ):
     """Pipeline orchestration function for extracting and processing form submissions."""
-    current_run.log_info("Starting form submissions extraction pipeline")
+    current_run.log_info("Starting IASO Supervision SSC v3 Pipeline.")
+    configure_cache(
+        clear_previous_runs,
+        db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
+    )
 
     # read default cofigurations tailored to this pipeline
     with Path(
@@ -102,13 +123,28 @@ def sanru_iaso_to_dhis2(
         output_format,
         form_name,
         iaso_connection,
-        extract
+        extract,
+        period_to_run,
     )
     place_holder = process_and_transform(
-        form_name, output_format, output_file_name, output_file_path, transform
+        form_name,
+        output_format,
+        output_file_name,
+        output_file_path,
+        transform,
+        period_to_run,
+        clear_previous_runs,
     )
 
-    post_to_dhis2_task(dhis2_connection, dry_run, output_format, place_holder, post_to_dhis2)
+    post_to_dhis2_task(
+        dhis2_connection,
+        dry_run,
+        output_format,
+        place_holder,
+        post_to_dhis2,
+        period_to_run,
+        clear_previous_runs,
+    )
 
 
 @sanru_iaso_to_dhis2.task
@@ -120,7 +156,8 @@ def extract_and_load(  # noqa: ANN201
     output_format: str,
     form_name: str,
     iaso_connection: IASO,
-    extract: bool
+    extract: bool,
+    period_to_run: int,
 ):
     """Task to extract and save data to the workspace.
 
@@ -136,7 +173,7 @@ def extract_and_load(  # noqa: ANN201
 
         cutoff_date = parse_cutoff_date(last_updated)
         iaso = authenticate_iaso(iaso_connection)
-        submissions = fetch_submissions(iaso, form_id, cutoff_date)
+        submissions = fetch_submissions(iaso, form_id, cutoff_date, period_to_run)
         submissions = process_choices(submissions, choices_to_labels, iaso, form_id)
         submissions = deduplicate_columns(submissions)
         output_file_path = export_to_file(
@@ -154,7 +191,13 @@ def extract_and_load(  # noqa: ANN201
 
 @sanru_iaso_to_dhis2.task
 def process_and_transform(
-    form_name: str, output_format: str, output_file_name: str, output_file_path: str, transform: str
+    form_name: str,
+    output_format: str,
+    output_file_name: str,
+    output_file_path: str,
+    transform: str,
+    period_to_run: int,
+    clear_previous_runs: bool,
 ):
     """Task to process the data saved in the workspace."""
     if not transform:
@@ -164,7 +207,13 @@ def process_and_transform(
     current_run.log_info("Processing and transforming data.")
     try:
         # process the extracted data
-        transform_data(output_format, form_name, output_file_name)
+        transform_data(
+            output_format,
+            form_name,
+            output_file_name,
+            period_to_run,
+            clear_previous_runs,
+        )
         current_run.log_info("Transformation successful.")
     except Exception as exc:
         current_run.log_error(f"Pipeline failed: {exc}")
@@ -173,7 +222,13 @@ def process_and_transform(
 
 @sanru_iaso_to_dhis2.task
 def post_to_dhis2_task(
-    dhis2_connection: DHIS2Connection, dry_run: bool, output_format: str, place_holder: int, post_to_dhis2: bool
+    dhis2_connection: DHIS2Connection,
+    dry_run: bool,
+    output_format: str,
+    place_holder: int,
+    post_to_dhis2: bool,
+    period_to_run: int,
+    clear_previous_runs: bool,
 ):
     """Task to post data to dhis2."""
     if not post_to_dhis2:
@@ -181,10 +236,137 @@ def post_to_dhis2_task(
         return
 
     current_run.log_info("Posting data to dhis2.")
-    _post_handler(dhis2_connection, dry_run, output_format)
+    _post_handler(
+        dhis2_connection, dry_run, output_format, period_to_run, clear_previous_runs
+    )
 
 
-def _post_handler(dhis2_connection: DHIS2Connection, dry_run: bool, output_format: str):
+def configure_cache(clear_previous_runs: bool, db_path: str = "pipeline_cache.db"):
+    """Configure the pipeline cache stored in a SQLite database.
+
+    Args:
+        clear_previous_runs: If True, delete all existing cache records.
+        db_path: Path to the SQLite cache database file.
+
+    """
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Create table if it does not exist
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS pipeline_cache (
+            period INTEGER PRIMARY KEY,
+            extracted BOOLEAN DEFAULT FALSE,
+            transformed BOOLEAN DEFAULT FALSE,
+            pushed BOOLEAN DEFAULT FALSE
+        )
+        """)
+
+    # Clear previous runs if requested
+    if clear_previous_runs:
+        cursor.execute("DELETE FROM pipeline_cache")
+
+    conn.commit()
+    conn.close()
+
+
+def update_cache(period: int, stage: str, db_path: str = "pipeline_cache.db"):
+    """Update pipeline cache when a period reaches a processing stage.
+
+    Args:
+        period: Period being processed (YYYYMM format as integer).
+        stage: Processing stage to mark as completed. One of
+            ['extracted', 'transformed', 'pushed'].
+        db_path: Path to the SQLite cache database.
+    """
+    valid_stages = {"extracted", "transformed", "pushed"}
+
+    if stage not in valid_stages:
+        raise ValueError(f"stage must be one of {valid_stages}")
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Ensure period exists
+    cursor.execute(
+        """
+        INSERT OR IGNORE INTO pipeline_cache (period)
+        VALUES (?)
+        """,
+        (period,),
+    )
+
+    # Update stage
+    cursor.execute(
+        f"""
+        UPDATE pipeline_cache
+        SET {stage} = TRUE
+        WHERE period = ?
+        """,
+        (period,),
+    )
+
+    conn.commit()
+    conn.close()
+
+
+def should_process_period(
+    period: int,
+    stage: str,
+    clear_previous_runs: bool,
+    db_path: str = "pipeline_cache.db",
+) -> bool:
+    """Check whether a period should be processed for a given pipeline stage.
+
+    Args:
+        period: Period being processed (YYYYMM format as integer).
+        stage: Processing stage to check. One of
+            ['extracted', 'transformed', 'pushed'].
+        clear_previous_runs: If True, ignore cache and process all periods.
+        db_path: Path to the SQLite cache database.
+
+    Returns:
+        True if the period should be processed, False otherwise.
+    """
+    valid_stages = {"extracted", "transformed", "pushed"}
+
+    if stage not in valid_stages:
+        raise ValueError(f"stage must be one of {valid_stages}")
+
+    # Skip cache lookup entirely for performance
+    if clear_previous_runs:
+        return True
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        f"""
+        SELECT {stage}
+        FROM pipeline_cache
+        WHERE period = ?
+        """,
+        (period,),
+    )
+
+    result = cursor.fetchone()
+    conn.close()
+
+    # If period not in cache → process it
+    if result is None:
+        return True
+
+    # If stage already completed → skip
+    return not bool(result[0])
+
+
+def _post_handler(
+    dhis2_connection: DHIS2Connection,
+    dry_run: bool,
+    output_format: str,
+    period_to_run: int,
+    clear_previous_runs: bool,
+):
     # initialize_target dhis2_connectiont dhis2 instance
     target_dhis2_instance = validate_connections(dhis2_connection)
     pusher = DHIS2Pusher(
@@ -193,16 +375,47 @@ def _post_handler(dhis2_connection: DHIS2Connection, dry_run: bool, output_forma
         dry_run=dry_run,
         max_post=1000,
     )
-    folder_path = Path(workspace.files_path, "pipelines/sanru-iaso-to-dhis2/transformed")
+    folder_path = Path(
+        workspace.files_path, "pipelines/sanru-iaso-to-dhis2/transformed"
+    )
     for transformed_file in list(folder_path.glob(f"*{output_format}")):
-        if output_format == ".csv":
-            transformed_data = pl.read_csv(
-                transformed_file, infer_schema_length=1000, ignore_errors=True
+        period = int(str(transformed_file).split("_")[-1].split(".")[0])
+        if not should_process_period(
+            period,
+            "pushed",
+            clear_previous_runs=clear_previous_runs,
+            db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
+        ):
+            print(
+                f"Skipping pushing period {period} to dhis2 because it has already been pushed."
             )
-        elif output_format == ".parquet":
-            transformed_data = pl.read_parquet(transformed_file)
+            continue
+        if period_to_run:
+            if str(period_to_run) in str(transformed_file):
+                print(f"Posting data related to period {period_to_run} only")
+                if output_format == ".csv":
+                    transformed_data = pl.read_csv(
+                        transformed_file, infer_schema_length=1000, ignore_errors=True
+                    )
+                elif output_format == ".parquet":
+                    transformed_data = pl.read_parquet(transformed_file)
+            else:
+                continue
+        else:
+            if output_format == ".csv":
+                transformed_data = pl.read_csv(
+                    transformed_file, infer_schema_length=1000, ignore_errors=True
+                )
+            elif output_format == ".parquet":
+                transformed_data = pl.read_parquet(transformed_file)
 
         post_to_dhis2(pusher, transformed_data, dry_run)
+
+        update_cache(
+            period=int(period),
+            stage="pushed",
+            db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
+        )
 
 
 def get_dhis2_client(connection: DHIS2Connection) -> DHIS2:
@@ -270,7 +483,11 @@ def yes_no_to_int(colname: str, alias: str) -> pl.Expr:
 
 
 def transform_data(  # noqa: D103
-    output_format: str, form_name: str, output_file_name: str, process_all: bool = True
+    output_format: str,
+    form_name: str,
+    output_file_name: str,
+    period_to_run: int,
+    clear_previous_runs: bool,
 ) -> None:
     # read data from raw
 
@@ -283,12 +500,36 @@ def transform_data(  # noqa: D103
     folder_path = Path(workspace.files_path, "pipelines/sanru-iaso-to-dhis2/raw")
 
     for raw_file in list(folder_path.glob(f"*{output_format}")):
-        if output_format == ".csv":
-            supervision = pl.read_csv(
-                raw_file, infer_schema_length=1000, ignore_errors=True
+        period = int(str(raw_file).split("_")[-1].split(".")[0])
+        print(f"period period period {period}")
+        if not should_process_period(
+            period,
+            "transformed",
+            clear_previous_runs=clear_previous_runs,
+            db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
+        ):
+            print(
+                f"Skipping transforming period {period} because it has already been transformed."
             )
-        elif output_format == ".parquet":
-            supervision = pl.read_parquet(raw_file)
+            continue
+        if period_to_run:
+            if str(period_to_run) in str(raw_file):
+                print(f"Transforming data related to period {period_to_run} only")
+                if output_format == ".csv":
+                    supervision = pl.read_csv(
+                        raw_file, infer_schema_length=1000, ignore_errors=True
+                    )
+                elif output_format == ".parquet":
+                    supervision = pl.read_parquet(raw_file)
+            else:
+                continue
+        else:
+            if output_format == ".csv":
+                supervision = pl.read_csv(
+                    raw_file, infer_schema_length=1000, ignore_errors=True
+                )
+            elif output_format == ".parquet":
+                supervision = pl.read_parquet(raw_file)
 
         supervision = _process_columns(supervision)
 
@@ -309,32 +550,36 @@ def transform_data(  # noqa: D103
             mapping_df, left_on="data_element", right_on="name", how="left"
         )
 
-        transformed_data = transformed_data.drop(["Calcul", "data_element", "CC", "export_id"])
-        transformed_data = transformed_data.rename({
-            "periode": "PERIOD",
-            "reference_externe": "ORG_UNIT",
-            "data_element_id": "DX_UID",
-            "value": "VALUE",
-            "COC": "CATEGORY_OPTION_COMBO"
-        })
+        transformed_data = transformed_data.drop(
+            ["Calcul", "data_element", "CC", "export_id"]
+        )
+        transformed_data = transformed_data.rename(
+            {
+                "periode": "PERIOD",
+                "reference_externe": "ORG_UNIT",
+                "data_element_id": "DX_UID",
+                "value": "VALUE",
+                "COC": "CATEGORY_OPTION_COMBO",
+            }
+        )
 
         transformed_data = transformed_data.with_columns(
             pl.lit("DATA_ELEMENT").alias("DATA_TYPE")
-            )
-        
+        )
+
         transformed_data = transformed_data.with_columns(
             pl.when(
-                pl.col("CATEGORY_OPTION_COMBO").is_null() |
-                (pl.col("CATEGORY_OPTION_COMBO") == "")  # noqa: PLC1901
-                )
+                pl.col("CATEGORY_OPTION_COMBO").is_null()
+                | (pl.col("CATEGORY_OPTION_COMBO") == "")  # noqa: PLC1901
+            )
             .then(pl.lit("HllvX50cXC0"))
             .otherwise(pl.col("CATEGORY_OPTION_COMBO"))
             .alias("CATEGORY_OPTION_COMBO")
-            )
+        )
 
         transformed_data = transformed_data.with_columns(
             pl.lit("HllvX50cXC0").alias("ATTRIBUTE_OPTION_COMBO")
-            )
+        )
 
         current_period = int(datetime.now().strftime("%Y%m"))
         transformed_data = transformed_data.filter(pl.col("PERIOD") <= current_period)
@@ -511,9 +756,7 @@ def parse_cutoff_date(date_str: str | None) -> str | None:
 
 
 def fetch_submissions(
-    iaso: IASO,
-    form_id: int,
-    cutoff_date: str | None,
+    iaso: IASO, form_id: int, cutoff_date: str | None, period_to_run: int
 ) -> pl.DataFrame:
     """Retrieve form submissions from IASO API.
 
@@ -521,13 +764,29 @@ def fetch_submissions(
         iaso: Authenticated IASO client
         form_id: Target form identifier
         cutoff_date: Optional date filter
+        period_to_run: Period to run
 
     Returns:
         DataFrame containing form submissions
     """
     try:
         current_run.log_info(f"Fetching submissions for form ID {form_id}")
-        csv = dataframe._get_instances_csv(iaso, form_id, last_updated=cutoff_date)
+        if period_to_run:
+            """
+            TBD
+            Filter data called by period to run in order to return data for that period only
+            """
+            print(f"Extracting data related to period {period_to_run} only")
+            csv = get_instances_csv_with_periods(
+                iaso,
+                form_id,
+                last_updated=cutoff_date,
+                start_period=period_to_run,
+                end_period=period_to_run,
+                period_type="MONTH",
+            )
+        else:
+            csv = dataframe._get_instances_csv(iaso, form_id, last_updated=cutoff_date)
         return pl.read_csv(
             StringIO(csv),
             ignore_errors=True,
@@ -536,6 +795,33 @@ def fetch_submissions(
     except Exception as exc:
         current_run.log_error(f"Submission retrieval failed: {exc}")
         raise
+
+
+def get_instances_csv_with_periods(
+    iaso: IASO,
+    form_id: int,
+    last_updated: str | None = None,
+    start_period: int | None = None,
+    end_period: int | None = None,
+    period_type: str | None = None,
+) -> str:
+    """Extract form instances in CSV format.
+
+    Returns:
+        String containing data extracted from IASO
+    """
+    params = {"form_id": form_id, "csv": True}
+    if last_updated is not None:
+        params["modificationDateFrom"] = last_updated
+    if start_period:
+        params["startPeriod"] = start_period
+    if end_period:
+        params["endPeriod"] = end_period
+    if period_type:
+        params["periodType"] = period_type
+    r = iaso.api_client.get(url="api/instances", params=params, stream=True, timeout=30)
+    r.raise_for_status()
+    return r.content.decode("utf8")
 
 
 def process_choices(
@@ -596,7 +882,7 @@ def export_to_file(
     output_file_name: str,
     output_format: str,
     raw: bool,
-    transformed_file_path: str = ""
+    transformed_file_path: str = "",
 ) -> Path:
     """Export submissions data to specified file format.
 
@@ -615,9 +901,7 @@ def export_to_file(
     if raw:
         periods = submissions["periode" if raw else "period"].unique()
         for period in periods:
-            file_name = (
-                f"pipelines/sanru-iaso-to-dhis2/raw/{output_file_name}_{period}"
-            )
+            file_name = f"pipelines/sanru-iaso-to-dhis2/raw/{output_file_name}_{period}"
             output_file_path = _generate_output_file_path(
                 form_name=form_name,
                 output_file_name=file_name,
@@ -635,9 +919,14 @@ def export_to_file(
                 period_submission.write_parquet(output_file_path)
             else:
                 period_submission.to_pandas().to_excel(output_file_path, index=False)
+            update_cache(
+                period=int(period),
+                stage="extracted",
+                db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
+            )
 
-            # fpath = output_file_path.as_posix()
-            # current_run.add_file_output(fpath)
+            fpath = output_file_path.as_posix()
+            current_run.add_file_output(fpath)
     else:
         file_name = f"{transformed_file_path}"
         output_file_path = _generate_output_file_path(
@@ -652,8 +941,15 @@ def export_to_file(
         else:
             submissions.to_pandas().to_excel(output_file_path, index=False)
 
-        # fpath = output_file_path.as_posix()
-        # current_run.add_file_output(fpath)
+        period = int(str(output_file_path).split("_")[-1].split(".")[0])
+        update_cache(
+            period=int(period),
+            stage="transformed",
+            db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
+        )
+
+        fpath = output_file_path.as_posix()
+        current_run.add_file_output(fpath)
     return output_file_path
 
 
@@ -696,7 +992,7 @@ def prepare_data_value_payload(data_values: pl.DataFrame) -> list[dict[str, Any]
         "CATEGORY_OPTION_COMBO": "categoryOptionCombo",
         "VALUE": "value",
         "DATA_TYPE": "dataType",
-        "ATTRIBUTE_OPTION_COMBO": "attributeOptionCombo"
+        "ATTRIBUTE_OPTION_COMBO": "attributeOptionCombo",
     }
 
     # Check for required columns
