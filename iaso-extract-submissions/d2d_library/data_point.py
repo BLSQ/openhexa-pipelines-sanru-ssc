@@ -22,13 +22,13 @@ class DataPoint:
                 'VALUE']
         """
         row = series_row.squeeze()
-        self.dataType = row.get("DATA_TYPE")
-        self.dataElement = row.get("DX_UID")
-        self.period = row.get("PERIOD")
-        self.orgUnit = row.get("ORG_UNIT")
-        self.categoryOptionCombo = row.get("CATEGORY_OPTION_COMBO")
-        self.attributeOptionCombo = row.get("ATTRIBUTE_OPTION_COMBO")
-        self.value = row.get("VALUE")
+        self.dataType = row.get("dataType")
+        self.dataElement = row.get("dataElement")
+        self.period = row.get("period")
+        self.orgUnit = row.get("orgUnit")
+        self.categoryOptionCombo = row.get("categoryOptionCombo")
+        self.attributeOptionCombo = row.get("attributeOptionCombo")
+        self.value = row.get("value")
 
     def to_json(self) -> dict:
         """Return a dictionary representation of the data point suitable for DHIS2 JSON format.
@@ -80,7 +80,13 @@ class DataPoint:
             True if all relevant attributes are not None, False otherwise.
         """
         # List of attributes to check, optionally excluding the 'value' attribute
-        attributes = [self.dataElement, self.period, self.orgUnit, self.categoryOptionCombo, self.attributeOptionCombo]
+        attributes = [
+            self.dataElement,
+            self.period,
+            self.orgUnit,
+            self.categoryOptionCombo,
+            self.attributeOptionCombo,
+        ]
         if not exclude_value:
             attributes.append(self.value)
 
