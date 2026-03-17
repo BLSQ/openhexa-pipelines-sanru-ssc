@@ -941,7 +941,7 @@ def export_to_file(
                 output_format=output_format,
             )
             current_run.log_info(
-                f"Exporting submissions fiile to: `{output_file_path}`"
+                f"Exporting submissions file to: `{output_file_path}`"
             )
             period_submission = submissions.filter(
                 pl.col("periode" if raw else "period") == period
@@ -980,7 +980,9 @@ def export_to_file(
             stage="transformed",
             db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
         )
-
+        current_run.log_info(
+                f"Exporting submissions file to: `{output_file_path}`"
+            )
         fpath = output_file_path.as_posix()
         current_run.add_file_output(fpath)
     return output_file_path
