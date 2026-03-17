@@ -249,7 +249,7 @@ def post_to_dhis2_task(
 ):
     """Task to post data to dhis2."""
     if not post_to_dhis2:
-        current_run.log_info("Skipping posting data to taarget DHIS2 instance.")
+        current_run.log_info("Skipping posting data to target DHIS2 instance.")
         return
 
     current_run.log_info("Posting data to dhis2.")
@@ -417,9 +417,6 @@ def _post_handler(
             clear_previous_runs=clear_previous_runs,
             db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
         ):
-            current_run.log_info(
-                f"Skipping pushing period {period} to dhis2 because it has already been pushed."
-            )
             continue
         if period_to_run:
             if str(period_to_run) in str(transformed_file):
@@ -543,9 +540,6 @@ def transform_data(  # noqa: D103
             clear_previous_runs=clear_previous_runs,
             db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
         ):
-            current_run.log_info(
-                f"Skipping transforming period {period} because it has already been transformed."
-            )
             continue
         if period_to_run:
             if str(period_to_run) in str(raw_file):
