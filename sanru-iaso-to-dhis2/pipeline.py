@@ -12,6 +12,7 @@ import json
 from typing import Any
 import sqlite3
 import polars as pl
+import time
 from openhexa.sdk import (
     DHIS2Connection,
     IASOConnection,
@@ -1126,15 +1127,26 @@ def fetch_submissions(
 
             for period in periods_from_last_update:
                 current_run.log_info(f"Fetching data for period {period}")
-
-                csv = get_instances_csv_with_periods(
-                    iaso,
-                    form_id,
-                    last_updated=None,
-                    start_period=period,
-                    end_period=period,
-                    period_type="MONTH",
-                )
+                try:
+                    csv = get_instances_csv_with_periods(
+                        iaso,
+                        form_id,
+                        last_updated=None,
+                        start_period=period,
+                        end_period=period,
+                        period_type="MONTH",
+                    )
+                except Exception as e:
+                    current_run.log_info(f"Fetching data for period {period} failed. Trying again in {2} minutes: {e}")
+                    time.sleep(120)
+                    csv = get_instances_csv_with_periods(
+                        iaso,
+                        form_id,
+                        last_updated=None,
+                        start_period=period,
+                        end_period=period,
+                        period_type="MONTH",
+                    )
 
                 df = pl.read_csv(
                     StringIO(csv),
