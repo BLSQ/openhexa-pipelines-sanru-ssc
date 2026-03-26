@@ -114,14 +114,22 @@ def sanru_iaso_to_dhis2(
     current_run.log_info("Starting IASO Supervision SSC v3 Pipeline.")
     periods_from_last_update = None
     if start_date:
-        current_run.log_info("Start date is provided. This run will use periods as from start date.")
+        current_run.log_info(
+            "Start date is provided. This run will use periods as from start date."
+        )
         if end_date:
-            current_run.log_info("End date is provided. This run will stop on the period of the end date.")
-            periods_from_last_update = get_periods_from_last_update(start_date, end_date)
+            current_run.log_info(
+                "End date is provided. This run will stop on the period of the end date."
+            )
+            periods_from_last_update = get_periods_from_last_update(
+                start_date, end_date
+            )
         else:
             periods_from_last_update = get_periods_from_last_update(start_date)
     elif scheduled_run:
-        current_run.log_info("This run will use the past 3 periods only becuase it is a scheduled run")
+        current_run.log_info(
+            "This run will use the past 3 periods only becuase it is a scheduled run"
+        )
         periods_from_last_update = get_previous_periods_from_now(number_of_periods=3)
     current_run.log_info(f"Running the following periods {periods_from_last_update}")
 
@@ -903,6 +911,17 @@ def transform_data(  # noqa: D103
         if transformed_data.is_empty():
             continue
 
+        transformed_data = transformed_data.with_columns(
+            pl.when(
+                pl.col("VALUES").is_null()
+                | (pl.col("VALUES").cast(pl.Utf8, strict=False).str.strip_chars() == "") # noqa
+                | (pl.col("VALUES").cast(pl.Float64, strict=False).is_nan())
+            )
+            .then(None)
+            .otherwise(pl.col("VALUES"))
+            .alias("VALUES")
+        )
+
         export_to_file(
             transformed_data.drop_nulls(),
             form_name,
@@ -1285,8 +1304,8 @@ def export_to_file(
                         db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
                     )
 
-            # fpath = output_file_path.as_posix()
-            # current_run.add_file_output(fpath)
+            fpath = output_file_path.as_posix()
+            current_run.add_file_output(fpath)
     else:
         if submissions.height > 0:
             file_name = f"{transformed_file_path}"
@@ -1315,8 +1334,8 @@ def export_to_file(
                     records=row["records"],
                     db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
                 )
-            # fpath = output_file_path.as_posix()
-            # current_run.add_file_output(fpath)
+            fpath = output_file_path.as_posix()
+            current_run.add_file_output(fpath)
     return output_file_path
 
 
@@ -1346,11 +1365,11 @@ def post_to_dhis2(
         raise
 
 
-def prepare_data_value_payload(data_values: pl.DataFrame) -> list[dict[str, Any]]:
+def prepare_data_value_payload(data_values: pl.DataFrame) -> pl.DataFrame:
     """Prepare data values for DHIS2 API payload.
 
     Returns:
-        list[dict[str, Any]]: List of data value dictionaries for API.
+        pl.DataFrame]: List of data value dictionaries for API.
     """
     mapping_toolbox_dhis2_name = {
         "DX_UID": "dataElement",
