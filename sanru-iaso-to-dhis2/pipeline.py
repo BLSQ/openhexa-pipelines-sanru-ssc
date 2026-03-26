@@ -628,6 +628,7 @@ def _post_handler(
                 transformed_data = pl.read_parquet(transformed_file)
 
         if period_to_run or periods_from_last_update:
+            current_run.log_info(f"Posting period={period} to dhis2.")
             post_to_dhis2(pusher, transformed_data, dry_run)
         else:
             # check the statistics on transformed data
@@ -643,6 +644,7 @@ def _post_handler(
                 & (pl.col("ORG_UNIT").is_in(mismatched_org_units))
             )
             if transformed_data.height > 0:
+                current_run.log_info(f"Posting period={period} to dhis2.")
                 post_to_dhis2(pusher, transformed_data, dry_run)
 
         if transformed_data.height > 0:
@@ -1332,7 +1334,6 @@ def post_to_dhis2(
     try:
         # Prepare payload
         payload = prepare_data_value_payload(transformed_data)
-        print(f"Prepared {len(payload)} data values for posting")
         current_run.log_info(f"Prepared {len(payload)} data values for posting")
         # Post data
         pusher.push_data(df_data=payload.to_pandas())
