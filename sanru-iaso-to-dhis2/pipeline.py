@@ -25,6 +25,7 @@ from openhexa.sdk import (
 from openhexa.toolbox.iaso import IASO, dataframe
 from openhexa.toolbox.dhis2 import DHIS2
 from d2d_library.dhis2_pusher import DHIS2Pusher
+from sqlalchemy import create_engine, text
 
 # Precompile regex pattern for string cleaning
 CLEAN_PATTERN = re.compile(r"[^\w\s-]")
@@ -372,148 +373,172 @@ def configure_cache(
     period_to_run: int | None,
     organization_unit_to_run: str | None = None,
     clear_previous_runs: bool = False,
-    db_path: str = "pipeline_cache.db",
 ):
-    """Configure the pipeline cache stored in a SQLite database.
+    """Configure the pipeline cache stored in a Postgres database.
 
     Args:
         periods_from_last_update: List of periods to clear (bulk incremental reset).
         period_to_run: If provided, clear this specific period from the db.
         organization_unit_to_run: If provided, clear this specific org unit from the db.
         clear_previous_runs: If True, delete all existing cache records.
-        db_path: Path to the SQLite cache database file.
     """
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+    engine = create_engine(workspace.database_url)
+    with engine.begin() as conn:
+        # Create table if it does not exist
+        current_run.log_info("Creating cache table if it does not exist.")
 
-    # Create table if it does not exist
-    current_run.log_info("Creating cache db if it does not exist.")
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS pipeline_cache (
-            period INTEGER,
-            organization_unit TEXT,
-            extracted_count INTEGER DEFAULT 0,
-            transformed_count INTEGER DEFAULT 0,
-            pushed_count INTEGER DEFAULT 0,
-            PRIMARY KEY (period, organization_unit)
-        )
-    """)
-
-    # Case 1: Full reset
-    if clear_previous_runs:
-        current_run.log_info(
-            "Removing all data from cache db to allow run for all periods and org units."
-        )
-        cursor.execute("DELETE FROM pipeline_cache")
-
-    # Case 2: Bulk periods (incremental backfill)
-    elif periods_from_last_update:
-        current_run.log_info(
-            f"Removing cache for periods {periods_from_last_update}"
-            + (
-                f" and org unit {organization_unit_to_run}"
-                if organization_unit_to_run
-                else ""
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS pipeline_cache (
+                period INTEGER,
+                organization_unit TEXT,
+                extracted_count INTEGER DEFAULT 0,
+                transformed_count INTEGER DEFAULT 0,
+                pushed_count INTEGER DEFAULT 0,
+                PRIMARY KEY (period, organization_unit)
             )
-        )
+        """))
 
-        placeholders = ",".join(["?"] * len(periods_from_last_update))
-
-        if organization_unit_to_run:
-            cursor.execute(
-                f"""
-                DELETE FROM pipeline_cache
-                WHERE period IN ({placeholders})
-                AND organization_unit = ?
-                """,
-                (*periods_from_last_update, organization_unit_to_run),
+        # Case 1: Full reset
+        if clear_previous_runs:
+            current_run.log_info(
+                "Removing all data from cache to allow full rerun."
             )
+            conn.execute(text("DELETE FROM pipeline_cache"))
+
+        # Case 2: Bulk periods
+        elif periods_from_last_update:
+            current_run.log_info(
+                f"Removing cache for periods {periods_from_last_update}"
+                + (
+                    f" and org unit {organization_unit_to_run}"
+                    if organization_unit_to_run
+                    else ""
+                )
+            )
+
+            if organization_unit_to_run:
+                conn.execute(
+                    text("""
+                        DELETE FROM pipeline_cache
+                        WHERE period = ANY(:periods)
+                        AND organization_unit = :ou
+                    """),
+                    {
+                        "periods": periods_from_last_update,
+                        "ou": organization_unit_to_run,
+                    },
+                )
+            else:
+                conn.execute(
+                    text("""
+                        DELETE FROM pipeline_cache
+                        WHERE period = ANY(:periods)
+                    """),
+                    {"periods": periods_from_last_update},
+                )
+
+        # Case 3: Period + org unit
+        elif period_to_run is not None and organization_unit_to_run is not None:
+            current_run.log_info(
+                f"Removing cache for period {period_to_run} and org unit {organization_unit_to_run}."
+            )
+            conn.execute(
+                text("""
+                    DELETE FROM pipeline_cache
+                    WHERE period = :period
+                    AND organization_unit = :ou
+                """),
+                {"period": period_to_run, "ou": organization_unit_to_run},
+            )
+
+        # Case 4: Only period
+        elif period_to_run is not None:
+            current_run.log_info(f"Removing cache for period {period_to_run}.")
+            conn.execute(
+                text("""
+                    DELETE FROM pipeline_cache
+                    WHERE period = :period
+                """),
+                {"period": period_to_run},
+            )
+
+        # Case 5: Only org unit
+        elif organization_unit_to_run is not None:
+            current_run.log_info(
+                f"Removing cache for organization unit {organization_unit_to_run}."
+            )
+            conn.execute(
+                text("""
+                    DELETE FROM pipeline_cache
+                    WHERE organization_unit = :ou
+                """),
+                {"ou": organization_unit_to_run},
+            )
+
         else:
-            cursor.execute(
-                f"""
-                DELETE FROM pipeline_cache
-                WHERE period IN ({placeholders})
-                """,
-                periods_from_last_update,
+            current_run.log_info(
+                "No cache clearing conditions provided. Skipping delete step."
             )
 
-    # Case 3: Both period and org unit provided
-    elif period_to_run is not None and organization_unit_to_run is not None:
-        current_run.log_info(
-            f"Removing cache for period {period_to_run} and org unit {organization_unit_to_run}."
-        )
-        cursor.execute(
-            "DELETE FROM pipeline_cache WHERE period = ? AND organization_unit = ?",
-            (period_to_run, organization_unit_to_run),
-        )
 
-    # Case 4: Only period provided
-    elif period_to_run is not None:
-        current_run.log_info(f"Removing cache for period {period_to_run}.")
-        cursor.execute("DELETE FROM pipeline_cache WHERE period = ?", (period_to_run,))
-
-    # Case 5: Only org unit provided
-    elif organization_unit_to_run is not None:
-        current_run.log_info(
-            f"Removing cache for organization unit {organization_unit_to_run}."
-        )
-        cursor.execute(
-            "DELETE FROM pipeline_cache WHERE organization_unit = ?",
-            (organization_unit_to_run,),
-        )
-
-    else:
-        current_run.log_info(
-            "No cache clearing conditions provided. Skipping delete step."
-        )
-
-    conn.commit()
-    conn.close()
-
-
-def update_cache(
-    ou_id: str,
-    period: int,
+def update_cache_bulk(
+    df: pl.DataFrame,
     stage: str,
-    records: int,
-    db_path: str = "pipeline_cache.db",
 ):
-    """Update pipeline cache with record counts per stage.
+    """Bulk update pipeline cache with record counts per stage in Postgres.
 
     Args:
-        ou_id: Organization unit id
-        period: Period being processed (YYYYMM format as integer)
+        df: Polars DataFrame with columns ['ORG_UNIT', 'PERIOD', 'records']
         stage: Processing stage. One of ['extracted', 'transformed', 'pushed']
-        records: Number of records processed at this stage
-        db_path: Path to the SQLite cache database
     """
     stage_column_map = {
         "extracted": "extracted_count",
         "transformed": "transformed_count",
         "pushed": "pushed_count",
     }
+    engine = create_engine(workspace.database_url)
 
     if stage not in stage_column_map:
         raise ValueError(f"stage must be one of {list(stage_column_map.keys())}")
 
     column = stage_column_map[stage]
 
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
-    # Insert or update (upsert pattern)
-    cursor.execute(
-        f"""
-        INSERT INTO pipeline_cache (period, organization_unit, {column})
-        VALUES (?, ?, ?)
-        ON CONFLICT(period, organization_unit) DO UPDATE SET
-        {column} = excluded.{column}
-    """,
-        (period, ou_id, records),
+    # Clean + enforce schema
+    df = (
+        df.select(["ORG_UNIT", "PERIOD", "records"])
+        .with_columns(
+            [
+                pl.col("ORG_UNIT").cast(pl.Utf8),
+                pl.col("PERIOD").cast(pl.Int64),
+                pl.col("records").cast(pl.Int64),
+            ]
+        )
+        .filter(pl.col("records") > 0)  # optional optimization
     )
 
-    conn.commit()
-    conn.close()
+    if df.is_empty():
+        return
+
+    # Convert to list of dicts (best for SQLAlchemy)
+    rows = df.rename(
+        {
+            "ORG_UNIT": "organization_unit",
+            "PERIOD": "period",
+            "records": column,
+        }
+    ).to_dicts()
+
+    query = text(f"""
+        INSERT INTO pipeline_cache (period, organization_unit, {column})
+        VALUES (:period, :organization_unit, :{column})
+        ON CONFLICT (period, organization_unit)
+        DO UPDATE SET
+            {column} = GREATEST(pipeline_cache.{column}, EXCLUDED.{column})
+    """)
+
+    # Single transaction, bulk execution
+    with engine.begin() as conn:
+        conn.execute(query, rows)
 
 
 def should_process_period(
@@ -661,14 +686,10 @@ def _post_handler(
                 ["ORG_UNIT", "PERIOD"]
             ).agg(pl.len().alias("records"))
 
-            for row in period_submission_row_count.iter_rows(named=True):
-                update_cache(
-                    ou_id=row["ORG_UNIT"],
-                    period=int(row["PERIOD"]),
-                    stage="pushed",
-                    records=row["records"],
-                    db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
-                )
+            update_cache_bulk(
+                period_submission_row_count,
+                stage="transformed",
+            )
 
 
 def get_mismatched_org_units(
@@ -914,13 +935,13 @@ def transform_data(  # noqa: D103
 
         transformed_data = transformed_data.with_columns(
             pl.when(
-                pl.col("VALUES").is_null()
-                | (pl.col("VALUES").cast(pl.Utf8, strict=False).str.strip_chars() == "") # noqa
-                | (pl.col("VALUES").cast(pl.Float64, strict=False).is_nan())
+                pl.col("VALUE").is_null()
+                | (pl.col("VALUE").cast(pl.Utf8, strict=False).str.strip_chars() == "") # noqa
+                | (pl.col("VALUE").cast(pl.Float64, strict=False).is_nan())
             )
             .then(None)
-            .otherwise(pl.col("VALUES"))
-            .alias("VALUES")
+            .otherwise(pl.col("VALUE"))
+            .alias("VALUE")
         )
 
         export_to_file(
@@ -1303,18 +1324,14 @@ def export_to_file(
                         output_file_path, index=False
                     )
 
-                period_submission_row_count = period_submission.group_by(
-                    ["reference_externe", "periode"]
-                ).agg(pl.len().alias("records"))
+            period_submission_row_count = period_submission.group_by(
+                ["ORG_UNIT", "PERIOD"]
+            ).agg(pl.len().alias("records"))
 
-                for row in period_submission_row_count.iter_rows(named=True):
-                    update_cache(
-                        ou_id=row["reference_externe"],
-                        period=int(row["periode"]),
-                        stage="extracted",
-                        records=row["records"],
-                        db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
-                    )
+            update_cache_bulk(
+                period_submission_row_count,
+                stage="transformed"            
+                )
 
             fpath = output_file_path.as_posix()
             current_run.add_file_output(fpath)
@@ -1338,14 +1355,10 @@ def export_to_file(
                 ["ORG_UNIT", "PERIOD"]
             ).agg(pl.len().alias("records"))
 
-            for row in period_submission_row_count.iter_rows(named=True):
-                update_cache(
-                    ou_id=row["ORG_UNIT"],
-                    period=int(row["PERIOD"]),
-                    stage="transformed",
-                    records=row["records"],
-                    db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
-                )
+            update_cache_bulk(
+                period_submission_row_count,
+                stage="transformed"
+            )
             fpath = output_file_path.as_posix()
             current_run.add_file_output(fpath)
     return output_file_path
