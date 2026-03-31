@@ -25,7 +25,6 @@ from openhexa.sdk import (
 from openhexa.toolbox.iaso import IASO, dataframe
 from openhexa.toolbox.dhis2 import DHIS2
 from d2d_library.dhis2_pusher import DHIS2Pusher
-from sqlalchemy import create_engine, text
 
 # Precompile regex pattern for string cleaning
 CLEAN_PATTERN = re.compile(r"[^\w\s-]")
@@ -86,14 +85,6 @@ CLEAN_PATTERN = re.compile(r"[^\w\s-]")
     help="A particular period you would like the pipeline to run. e.g 202308",
 )
 @parameter(
-    "clear_previous_runs",
-    name="Clear previous runs",
-    type=bool,
-    required=True,
-    default=True,
-    help="Remove previous runs from cache in order to rerun all the periods",
-)
-@parameter(
     "scheduled_run",
     name="Scheduled Run",
     type=bool,
@@ -109,7 +100,6 @@ def sanru_iaso_to_dhis2(
     transform: bool,
     post_to_dhis2: bool,
     period_to_run: int | None,
-    clear_previous_runs: bool,
     scheduled_run: bool,
 ):
     """Pipeline orchestration function for extracting and processing form submissions."""
@@ -134,13 +124,6 @@ def sanru_iaso_to_dhis2(
         )
         periods_from_last_update = get_previous_periods_from_now(number_of_periods=3)
     current_run.log_info(f"Running the following periods {periods_from_last_update}")
-
-    configure_cache(
-        periods_from_last_update=periods_from_last_update,
-        period_to_run=period_to_run,
-        clear_previous_runs=clear_previous_runs,
-        db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
-    )
 
     # read default cofigurations tailored to this pipeline
     with Path(
@@ -177,7 +160,6 @@ def sanru_iaso_to_dhis2(
         output_file_path,
         transform,
         period_to_run,
-        clear_previous_runs,
     )
 
     post_to_dhis2_task(
@@ -188,8 +170,8 @@ def sanru_iaso_to_dhis2(
         place_holder,
         post_to_dhis2,
         period_to_run,
-        clear_previous_runs,
-        scheduled_run,
+        form_name,
+        output_file_name,
     )
 
 
@@ -286,7 +268,6 @@ def extract_and_load(  # noqa: ANN201
         return None
 
     try:
-
         iaso = authenticate_iaso(iaso_connection)
         submissions = fetch_submissions(
             periods_from_last_update, iaso, form_id, period_to_run
@@ -294,7 +275,7 @@ def extract_and_load(  # noqa: ANN201
         submissions = process_choices(submissions, choices_to_labels, iaso, form_id)
         submissions = deduplicate_columns(submissions)
         output_file_path = export_to_file(
-            submissions, form_name, output_file_name, output_format, True
+            submissions, form_name, output_file_name, output_format, stage="raw"
         )
         current_run.log_info(f"Data exported to file: `{output_file_path}`")
         current_run.log_info("Data extraction successful ✅")
@@ -314,8 +295,7 @@ def process_and_transform(
     output_file_name: str,
     output_file_path: str,
     transform: str,
-    period_to_run: int,
-    clear_previous_runs: bool,
+    period_to_run: int
 ):
     """Task to process the data saved in the workspace."""
     if not transform:
@@ -331,7 +311,6 @@ def process_and_transform(
             form_name,
             output_file_name,
             period_to_run,
-            clear_previous_runs,
         )
         current_run.log_info("Transformation successful.")
     except Exception as exc:
@@ -348,8 +327,8 @@ def post_to_dhis2_task(
     place_holder: int,
     post_to_dhis2: bool,
     period_to_run: int,
-    clear_previous_runs: bool,
-    scheduled_run: bool,
+    form_name: str,
+    output_file_name: str,
 ):
     """Task to post data to dhis2."""
     if not post_to_dhis2:
@@ -363,188 +342,14 @@ def post_to_dhis2_task(
         dry_run,
         output_format,
         period_to_run,
-        clear_previous_runs,
-        scheduled_run,
+        form_name,
+        output_file_name,
     )
-
-
-def configure_cache(
-    periods_from_last_update: list | None,
-    period_to_run: int | None,
-    organization_unit_to_run: str | None = None,
-    clear_previous_runs: bool = False,
-):
-    """Configure the pipeline cache stored in a Postgres database.
-
-    Args:
-        periods_from_last_update: List of periods to clear (bulk incremental reset).
-        period_to_run: If provided, clear this specific period from the db.
-        organization_unit_to_run: If provided, clear this specific org unit from the db.
-        clear_previous_runs: If True, delete all existing cache records.
-    """
-    engine = create_engine(workspace.database_url)
-    with engine.begin() as conn:
-        # Create table if it does not exist
-        current_run.log_info("Creating cache table if it does not exist.")
-
-        conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS pipeline_cache (
-                period INTEGER,
-                organization_unit TEXT,
-                extracted_count INTEGER DEFAULT 0,
-                transformed_count INTEGER DEFAULT 0,
-                pushed_count INTEGER DEFAULT 0,
-                PRIMARY KEY (period, organization_unit)
-            )
-        """))
-
-        # Case 1: Full reset
-        if clear_previous_runs:
-            current_run.log_info(
-                "Removing all data from cache to allow full rerun."
-            )
-            conn.execute(text("DELETE FROM pipeline_cache"))
-
-        # Case 2: Bulk periods
-        elif periods_from_last_update:
-            current_run.log_info(
-                f"Removing cache for periods {periods_from_last_update}"
-                + (
-                    f" and org unit {organization_unit_to_run}"
-                    if organization_unit_to_run
-                    else ""
-                )
-            )
-
-            if organization_unit_to_run:
-                conn.execute(
-                    text("""
-                        DELETE FROM pipeline_cache
-                        WHERE period = ANY(:periods)
-                        AND organization_unit = :ou
-                    """),
-                    {
-                        "periods": periods_from_last_update,
-                        "ou": organization_unit_to_run,
-                    },
-                )
-            else:
-                conn.execute(
-                    text("""
-                        DELETE FROM pipeline_cache
-                        WHERE period = ANY(:periods)
-                    """),
-                    {"periods": periods_from_last_update},
-                )
-
-        # Case 3: Period + org unit
-        elif period_to_run is not None and organization_unit_to_run is not None:
-            current_run.log_info(
-                f"Removing cache for period {period_to_run} and org unit {organization_unit_to_run}."
-            )
-            conn.execute(
-                text("""
-                    DELETE FROM pipeline_cache
-                    WHERE period = :period
-                    AND organization_unit = :ou
-                """),
-                {"period": period_to_run, "ou": organization_unit_to_run},
-            )
-
-        # Case 4: Only period
-        elif period_to_run is not None:
-            current_run.log_info(f"Removing cache for period {period_to_run}.")
-            conn.execute(
-                text("""
-                    DELETE FROM pipeline_cache
-                    WHERE period = :period
-                """),
-                {"period": period_to_run},
-            )
-
-        # Case 5: Only org unit
-        elif organization_unit_to_run is not None:
-            current_run.log_info(
-                f"Removing cache for organization unit {organization_unit_to_run}."
-            )
-            conn.execute(
-                text("""
-                    DELETE FROM pipeline_cache
-                    WHERE organization_unit = :ou
-                """),
-                {"ou": organization_unit_to_run},
-            )
-
-        else:
-            current_run.log_info(
-                "No cache clearing conditions provided. Skipping delete step."
-            )
-
-
-def update_cache_bulk(
-    df: pl.DataFrame,
-    stage: str,
-):
-    """Bulk update pipeline cache with record counts per stage in Postgres.
-
-    Args:
-        df: Polars DataFrame with columns ['ORG_UNIT', 'PERIOD', 'records']
-        stage: Processing stage. One of ['extracted', 'transformed', 'pushed']
-    """
-    stage_column_map = {
-        "extracted": "extracted_count",
-        "transformed": "transformed_count",
-        "pushed": "pushed_count",
-    }
-    engine = create_engine(workspace.database_url)
-
-    if stage not in stage_column_map:
-        raise ValueError(f"stage must be one of {list(stage_column_map.keys())}")
-
-    column = stage_column_map[stage]
-
-    # Clean + enforce schema
-    df = (
-        df.select(["ORG_UNIT", "PERIOD", "records"])
-        .with_columns(
-            [
-                pl.col("ORG_UNIT").cast(pl.Utf8),
-                pl.col("PERIOD").cast(pl.Int64),
-                pl.col("records").cast(pl.Int64),
-            ]
-        )
-        .filter(pl.col("records") > 0)  # optional optimization
-    )
-
-    if df.is_empty():
-        return
-
-    # Convert to list of dicts (best for SQLAlchemy)
-    rows = df.rename(
-        {
-            "ORG_UNIT": "organization_unit",
-            "PERIOD": "period",
-            "records": column,
-        }
-    ).to_dicts()
-
-    query = text(f"""
-        INSERT INTO pipeline_cache (period, organization_unit, {column})
-        VALUES (:period, :organization_unit, :{column})
-        ON CONFLICT (period, organization_unit)
-        DO UPDATE SET
-            {column} = GREATEST(pipeline_cache.{column}, EXCLUDED.{column})
-    """)
-
-    # Single transaction, bulk execution
-    with engine.begin() as conn:
-        conn.execute(query, rows)
 
 
 def should_process_period(
     period: int,
     stage: str,
-    clear_previous_runs: bool,
     db_path: str = "pipeline_cache.db",
 ) -> bool:
     """Check whether a period + organization unit should be processed for a given stage.
@@ -552,7 +357,6 @@ def should_process_period(
     Args:
         period: Period being processed (YYYYMM format as integer)
         stage: Processing stage. One of ['extracted', 'transformed', 'pushed']
-        clear_previous_runs: If True, ignore cache and process everything
         db_path: Path to the SQLite cache database
 
     Returns:
@@ -566,10 +370,6 @@ def should_process_period(
 
     if stage not in stage_column_map:
         raise ValueError(f"stage must be one of {list(stage_column_map.keys())}")
-
-    # Skip cache entirely
-    if clear_previous_runs:
-        return True
 
     column = stage_column_map[stage]
     conn = sqlite3.connect(db_path)
@@ -600,8 +400,8 @@ def _post_handler(
     dry_run: bool,
     output_format: str,
     period_to_run: int,
-    clear_previous_runs: bool,
-    scheduled_run: bool,
+    form_name: str,
+    output_file_name: str,
 ):
     # initialize_target dhis2_connectiont dhis2 instance
     target_dhis2_instance = validate_connections(dhis2_connection)
@@ -616,17 +416,7 @@ def _post_handler(
     )
     for transformed_file in list(folder_path.glob(f"*{output_format}")):
         period = int(str(transformed_file).split("_")[-1].split(".")[0])
-        if scheduled_run:
-            # TBD
-            pass
-        skip = False
-        if not should_process_period(
-            period,
-            "pushed",
-            clear_previous_runs=clear_previous_runs,
-            db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
-        ):
-            skip = True
+
         if period_to_run:
             if str(period_to_run) in str(transformed_file):
                 current_run.log_info(
@@ -652,44 +442,96 @@ def _post_handler(
             else:
                 continue
         else:
-            if skip:
-                continue
             if output_format == ".csv":
                 transformed_data = pl.read_csv(
                     transformed_file, infer_schema_length=1000, ignore_errors=True
                 )
             elif output_format == ".parquet":
                 transformed_data = pl.read_parquet(transformed_file)
+            else:
+                raise Exception(f"Unsupported file format: {output_format}")
 
-        if period_to_run or periods_from_last_update:
-            current_run.log_info(f"Posting period={period} to dhis2.")
-            post_to_dhis2(pusher, transformed_data, dry_run)
+        posted_file_path = str(transformed_file).replace("transformed", "pushed")
+        dataframe_to_post = compare_dataframes(
+            transformed_data, posted_file_path, output_format
+        )
+        if dataframe_to_post.height > 0:
+            current_run.log_info(
+                "The dataframe contains new data from previous posts. POSTING new data . . ."
+            )
+            post_to_dhis2(pusher, dataframe_to_post, dry_run)
+            export_to_file(
+                transformed_data.drop_nulls(),
+                form_name,
+                output_file_name,
+                output_format,
+                stage="pushed",
+                transformed_file_path=posted_file_path,
+            )
         else:
-            # check the statistics on transformed data
-            mismatched_org_units = get_mismatched_org_units(
-                transformed_data=transformed_data,
-                db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
-                period=period,
+            current_run.log_info(
+                "The dataframe does not contains new data from previous posts. SKIPPING posting"
             )
 
-            # Filter dataframe
-            transformed_data = transformed_data.filter(
-                (pl.col("PERIOD") == period)
-                & (pl.col("ORG_UNIT").is_in(mismatched_org_units))
-            )
-            if transformed_data.height > 0:
-                current_run.log_info(f"Posting period={period} to dhis2.")
-                post_to_dhis2(pusher, transformed_data, dry_run)
 
-        if transformed_data.height > 0:
-            period_submission_row_count = transformed_data.group_by(
-                ["ORG_UNIT", "PERIOD"]
-            ).agg(pl.len().alias("records"))
+def compare_dataframes(
+    transformed_data: pl.DataFrame, posted_file_path: str | Path, output_format: str
+) -> pl.DataFrame:
+    """Compare transformed data with previously posted data and return only new or changed records.
 
-            update_cache_bulk(
-                period_submission_row_count,
-                stage="transformed",
-            )
+    Args:
+        transformed_data: Current dataframe ready to post
+        posted_file_path: Path to parquet file from previous run
+        output_format: file type
+
+    Returns:
+        Polars DataFrame with only new or updated records
+    """
+    key_cols = [
+        "PERIOD",
+        "ORG_UNIT",
+        "DX_UID",
+        "CATEGORY_OPTION_COMBO",
+        "ATTRIBUTE_OPTION_COMBO",
+    ]
+
+    # 1. Read previous data
+    if not Path(posted_file_path).exists():
+        # If no previous file, everything is new
+        return transformed_data
+    if output_format == ".csv":
+        transformed_data = pl.read_csv(
+            posted_file_path, infer_schema_length=1000, ignore_errors=True
+        )
+    elif output_format == ".parquet":
+        posted_data = pl.read_parquet(posted_file_path)
+    else:
+        raise Exception(f"Unsupported file format: {output_format}")
+
+    # Ensure consistent schema
+    transformed_data = transformed_data.with_columns(
+        pl.col("VALUE").cast(pl.Utf8, strict=False)
+    )
+    posted_data = posted_data.with_columns(pl.col("VALUE").cast(pl.Utf8, strict=False))
+
+    # 2. Identify NEW records
+    new_records = transformed_data.join(
+        posted_data,
+        on=key_cols,
+        how="anti",
+    )
+
+    # 3. Identify CHANGED records
+    joined = transformed_data.join(
+        posted_data.select(key_cols + ["VALUE"]).rename({"VALUE": "OLD_VALUE"}),
+        on=key_cols,
+        how="inner",
+    )
+
+    changed_records = joined.filter(pl.col("VALUE") != pl.col("OLD_VALUE")).select(transformed_data.columns)
+
+    # 4. Combine results
+    return pl.concat([new_records, changed_records])
 
 
 def get_mismatched_org_units(
@@ -812,8 +654,7 @@ def transform_data(  # noqa: D103
     output_format: str,
     form_name: str,
     output_file_name: str,
-    period_to_run: int,
-    clear_previous_runs: bool,
+    period_to_run: int
 ) -> None:
     # read data from raw
 
@@ -827,15 +668,7 @@ def transform_data(  # noqa: D103
 
     for raw_file in list(folder_path.glob(f"*{output_format}")):
         period = int(str(raw_file).split("_")[-1].split(".")[0])
-        skip = False
 
-        if not should_process_period(
-            period,
-            "transformed",
-            clear_previous_runs=clear_previous_runs,
-            db_path=f"{workspace.files_path}/pipelines/sanru-iaso-to-dhis2/configurations/pipeline_cache.db",
-        ):
-            skip = True
         if period_to_run:
             if str(period_to_run) in str(raw_file):
                 current_run.log_info(
@@ -861,8 +694,7 @@ def transform_data(  # noqa: D103
             else:
                 continue
         else:
-            if skip:
-                continue
+
             if output_format == ".csv":
                 supervision = pl.read_csv(
                     raw_file, infer_schema_length=1000, ignore_errors=True
@@ -936,7 +768,9 @@ def transform_data(  # noqa: D103
         transformed_data = transformed_data.with_columns(
             pl.when(
                 pl.col("VALUE").is_null()
-                | (pl.col("VALUE").cast(pl.Utf8, strict=False).str.strip_chars() == "") # noqa
+                | (
+                    pl.col("VALUE").cast(pl.Utf8, strict=False).str.strip_chars() == "" # noqa
+                ) 
                 | (pl.col("VALUE").cast(pl.Float64, strict=False).is_nan())
             )
             .then(None)
@@ -949,7 +783,7 @@ def transform_data(  # noqa: D103
             form_name,
             output_file_name,
             output_format,
-            False,
+            stage="transformed",
             transformed_file_path=str(raw_file).replace("raw", "transformed"),
         )
 
@@ -1158,7 +992,9 @@ def fetch_submissions(
                         period_type="MONTH",
                     )
                 except Exception as e:
-                    current_run.log_info(f"Fetching data for period {period} failed. Trying again in {2} minutes: {e}")
+                    current_run.log_info(
+                        f"Fetching data for period {period} failed. Trying again in {2} minutes: {e}"
+                    )
                     time.sleep(120)
                     csv = get_instances_csv_with_periods(
                         iaso,
@@ -1285,7 +1121,7 @@ def export_to_file(
     form_name: str,
     output_file_name: str,
     output_format: str,
-    raw: bool,
+    stage: str,
     transformed_file_path: str = "",
 ) -> Path:
     """Export submissions data to specified file format.
@@ -1296,13 +1132,13 @@ def export_to_file(
         output_file_name: Optional custom output file name. If not provided, defaults to
             `iaso-pipelines/extract-submissions/form_<form_name>.<output_format>`.
         output_format: File format extension for the output file.
-        raw: Bolean to determine whether to write files in raw or transformed directories
+        stage: str to determine whether to write files in raw, transformed or pushed directories
         transformed_file_path: str path to the transformed file
 
     Returns:
         Path: The path to the exported file.
     """
-    if raw:
+    if stage == "raw":
         periods = submissions["periode"].unique()
         for period in periods:
             file_name = f"pipelines/sanru-iaso-to-dhis2/raw/{output_file_name}_{period}"
@@ -1323,15 +1159,9 @@ def export_to_file(
                     period_submission.to_pandas().to_excel(
                         output_file_path, index=False
                     )
-
-            period_submission_row_count = period_submission.group_by(
-                ["ORG_UNIT", "PERIOD"]
-            ).agg(pl.len().alias("records"))
-
-            update_cache_bulk(
-                period_submission_row_count,
-                stage="transformed"            
-                )
+            else:
+                current_run.log_info(f"Period {period} cannot be exported to {stage} file because it is empty.")
+                continue
 
             fpath = output_file_path.as_posix()
             current_run.add_file_output(fpath)
@@ -1351,16 +1181,10 @@ def export_to_file(
             else:
                 submissions.to_pandas().to_excel(output_file_path, index=False)
 
-            period_submission_row_count = submissions.group_by(
-                ["ORG_UNIT", "PERIOD"]
-            ).agg(pl.len().alias("records"))
-
-            update_cache_bulk(
-                period_submission_row_count,
-                stage="transformed"
-            )
             fpath = output_file_path.as_posix()
             current_run.add_file_output(fpath)
+        else:
+            current_run.log_info(f"Period {period} cannot be exported to {stage} file because it is empty.")
     return output_file_path
 
 
