@@ -115,6 +115,7 @@ def sanru_iaso_to_dhis2(
     elif scheduled_run:
         current_run.log_info("This run will use the past 3 periods only becuase it is a scheduled run")
         periods_from_last_update = get_previous_periods_from_now(number_of_periods=3)
+        print()
     current_run.log_info(f"Running the following periods {periods_from_last_update}")
 
     # read default cofigurations tailored to this pipeline
@@ -182,7 +183,7 @@ def get_previous_periods_from_now(number_of_periods: int) -> list:
 
     periods = []
 
-    for _ in range(number_of_periods):
+    for _ in range(number_of_periods + 1):
         periods.append(year * 100 + month)
 
         # move one month back
