@@ -106,16 +106,23 @@ def sanru_iaso_to_dhis2(
     current_run.log_info("Starting IASO Supervision SSC v3 Pipeline.")
     periods_from_last_update = None
     if start_date:
-        current_run.log_info("Start date is provided. This run will use periods as from start date.")
+        current_run.log_info(
+            "Start date is provided. This run will use periods as from start date."
+        )
         if end_date:
-            current_run.log_info("End date is provided. This run will stop on the period of the end date.")
-            periods_from_last_update = get_periods_from_last_update(start_date, end_date)
+            current_run.log_info(
+                "End date is provided. This run will stop on the period of the end date."
+            )
+            periods_from_last_update = get_periods_from_last_update(
+                start_date, end_date
+            )
         else:
             periods_from_last_update = get_periods_from_last_update(start_date)
     elif scheduled_run:
-        current_run.log_info("This run will use the past 3 periods only becuase it is a scheduled run")
+        current_run.log_info(
+            "This run will use the past 3 periods only becuase it is a scheduled run"
+        )
         periods_from_last_update = get_previous_periods_from_now(number_of_periods=3)
-        print()
     current_run.log_info(f"Running the following periods {periods_from_last_update}")
 
     # read default cofigurations tailored to this pipeline
@@ -192,10 +199,12 @@ def get_previous_periods_from_now(number_of_periods: int) -> list:
             month = 12
             year -= 1
 
-    return periods
+    return periods[1:]
 
 
-def get_periods_from_last_update(start_date: str, end_date: str | None = None) -> list[int]:
+def get_periods_from_last_update(
+    start_date: str, end_date: str | None = None
+) -> list[int]:
     """Generate periods (YYYYMM) from start_date up to end_date (or current month if not provided).
 
     Args:
@@ -207,18 +216,24 @@ def get_periods_from_last_update(start_date: str, end_date: str | None = None) -
     """
     start_date_dt = datetime.strptime(start_date, "%Y-%m-%d")
 
-    end_date_dt = datetime.strptime(end_date, "%Y-%m-%d") if end_date else datetime.now()
+    end_date_dt = (
+        datetime.strptime(end_date, "%Y-%m-%d") if end_date else datetime.now()
+    )
 
     # ✅ Validation
     if start_date_dt > end_date_dt:
-        raise ValueError(f"start_date ({start_date}) cannot be after end_date ({end_date_dt.strftime('%Y-%m-%d')})")
+        raise ValueError(
+            f"start_date ({start_date}) cannot be after end_date ({end_date_dt.strftime('%Y-%m-%d')})"
+        )
 
     periods = []
 
     year = start_date_dt.year
     month = start_date_dt.month
 
-    while (year < end_date_dt.year) or (year == end_date_dt.year and month <= end_date_dt.month):
+    while (year < end_date_dt.year) or (
+        year == end_date_dt.year and month <= end_date_dt.month
+    ):
         periods.append(year * 100 + month)
 
         # increment month
@@ -254,7 +269,9 @@ def extract_and_load(  # noqa: ANN201
 
     try:
         iaso = authenticate_iaso(iaso_connection)
-        submissions = fetch_submissions(periods_from_last_update, iaso, form_id, period_to_run)
+        submissions = fetch_submissions(
+            periods_from_last_update, iaso, form_id, period_to_run
+        )
         submissions = process_choices(submissions, choices_to_labels, iaso, form_id)
         submissions = deduplicate_columns(submissions)
         output_file_path = export_to_file(
@@ -278,7 +295,7 @@ def process_and_transform(
     output_file_name: str,
     output_file_path: str,
     transform: str,
-    period_to_run: int
+    period_to_run: int,
 ):
     """Task to process the data saved in the workspace."""
     if not transform:
@@ -394,15 +411,21 @@ def _post_handler(
         dry_run=dry_run,
         max_post=1000,
     )
-    folder_path = Path(workspace.files_path, "pipelines/sanru-iaso-to-dhis2/transformed")
+    folder_path = Path(
+        workspace.files_path, "pipelines/sanru-iaso-to-dhis2/transformed"
+    )
     for transformed_file in list(folder_path.glob(f"*{output_format}")):
         period = int(str(transformed_file).split("_")[-1].split(".")[0])
 
         if period_to_run:
             if str(period_to_run) in str(transformed_file):
-                current_run.log_info(f"Posting data related to period {period_to_run} only")
+                current_run.log_info(
+                    f"Posting data related to period {period_to_run} only"
+                )
                 if output_format == ".csv":
-                    transformed_data = pl.read_csv(transformed_file, infer_schema_length=1000, ignore_errors=True)
+                    transformed_data = pl.read_csv(
+                        transformed_file, infer_schema_length=1000, ignore_errors=True
+                    )
                 elif output_format == ".parquet":
                     transformed_data = pl.read_parquet(transformed_file)
             else:
@@ -411,14 +434,18 @@ def _post_handler(
             if period in periods_from_last_update:
                 current_run.log_info(f"Posting data related to period {period}.")
                 if output_format == ".csv":
-                    transformed_data = pl.read_csv(transformed_file, infer_schema_length=1000, ignore_errors=True)
+                    transformed_data = pl.read_csv(
+                        transformed_file, infer_schema_length=1000, ignore_errors=True
+                    )
                 elif output_format == ".parquet":
                     transformed_data = pl.read_parquet(transformed_file)
             else:
                 continue
         else:
             if output_format == ".csv":
-                transformed_data = pl.read_csv(transformed_file, infer_schema_length=1000, ignore_errors=True)
+                transformed_data = pl.read_csv(
+                    transformed_file, infer_schema_length=1000, ignore_errors=True
+                )
             elif output_format == ".parquet":
                 transformed_data = pl.read_parquet(transformed_file)
             else:
@@ -471,6 +498,9 @@ def compare_dataframes(
     # 1. Read previous data
     if not Path(posted_file_path).exists():
         # If no previous file, everything is new
+        current_run.log_info(
+            "This dataframe has never been pushed. All data will be pushed"
+        )
         return transformed_data
     if output_format == ".csv":
         transformed_data = pl.read_csv(
@@ -501,7 +531,15 @@ def compare_dataframes(
         how="inner",
     )
 
-    changed_records = joined.filter(pl.col("VALUE") != pl.col("OLD_VALUE")).select(transformed_data.columns)
+    changed_records = joined.filter(pl.col("VALUE") != pl.col("OLD_VALUE")).select(
+        transformed_data.columns
+    )
+    current_run.log_info(
+        (
+            f"All records = {transformed_data.height}, new records = {new_records.height}, altered records = {changed_records.height}.",
+            "Pushing new records and altered records",
+        )
+    )
 
     # 4. Combine results
     return pl.concat([new_records, changed_records])
@@ -523,7 +561,11 @@ def get_mismatched_org_units(
         List of organization units with mismatched counts
     """
     # 1. Aggregate transformed_data
-    aggregated_df = transformed_data.group_by(["ORG_UNIT", "PERIOD"]).count().rename({"count": "record_count"})
+    aggregated_df = (
+        transformed_data.group_by(["ORG_UNIT", "PERIOD"])
+        .count()
+        .rename({"count": "record_count"})
+    )
 
     # 2. Read from SQLite
     conn = sqlite3.connect(db_path)
@@ -608,7 +650,14 @@ def yes_no_to_int(colname: str, alias: str) -> pl.Expr:
     """
     col = pl.col(colname).cast(pl.Utf8)
 
-    return pl.when(col.is_in(["1", "yes"])).then(1).when(col.is_in(["0", "no"])).then(0).otherwise(None).alias(alias)
+    return (
+        pl.when(col.is_in(["1", "yes"]))
+        .then(1)
+        .when(col.is_in(["0", "no"]))
+        .then(0)
+        .otherwise(None)
+        .alias(alias)
+    )
 
 
 def transform_data(  # noqa: D103
@@ -616,7 +665,7 @@ def transform_data(  # noqa: D103
     output_format: str,
     form_name: str,
     output_file_name: str,
-    period_to_run: int
+    period_to_run: int,
 ) -> None:
     # read data from raw
 
@@ -633,9 +682,13 @@ def transform_data(  # noqa: D103
 
         if period_to_run:
             if str(period_to_run) in str(raw_file):
-                current_run.log_info(f"Transforming data related to period {period_to_run}.")
+                current_run.log_info(
+                    f"Transforming data related to period {period_to_run}."
+                )
                 if output_format == ".csv":
-                    supervision = pl.read_csv(raw_file, infer_schema_length=1000, ignore_errors=True)
+                    supervision = pl.read_csv(
+                        raw_file, infer_schema_length=1000, ignore_errors=True
+                    )
                 elif output_format == ".parquet":
                     supervision = pl.read_parquet(raw_file)
             else:
@@ -644,7 +697,9 @@ def transform_data(  # noqa: D103
             if period in periods_from_last_update:
                 current_run.log_info(f"Transforming data related to period {period}.")
                 if output_format == ".csv":
-                    supervision = pl.read_csv(raw_file, infer_schema_length=1000, ignore_errors=True)
+                    supervision = pl.read_csv(
+                        raw_file, infer_schema_length=1000, ignore_errors=True
+                    )
                 elif output_format == ".parquet":
                     supervision = pl.read_parquet(raw_file)
             else:
@@ -652,7 +707,9 @@ def transform_data(  # noqa: D103
         else:
 
             if output_format == ".csv":
-                supervision = pl.read_csv(raw_file, infer_schema_length=1000, ignore_errors=True)
+                supervision = pl.read_csv(
+                    raw_file, infer_schema_length=1000, ignore_errors=True
+                )
             elif output_format == ".parquet":
                 supervision = pl.read_parquet(raw_file)
 
@@ -663,52 +720,69 @@ def transform_data(  # noqa: D103
             variable_name="data_element",
             value_name="value",
         )
-        supervision = supervision.with_columns(pl.col("data_element").str.to_lowercase())
+        supervision = supervision.with_columns(
+            pl.col("data_element").str.to_lowercase()
+        )
         mapping_df = mapping_df.with_columns(pl.col("name").str.to_lowercase())
 
-        transformed_data = supervision.join(mapping_df, left_on="data_element", right_on="name", how="left")
+        transformed_data = supervision.join(
+            mapping_df, left_on="data_element", right_on="name", how="left"
+        )
 
-        transformed_data = transformed_data.drop(["Calcul", "data_element", "CC", "export_id"])
-        transformed_data = transformed_data.rename({
-            "periode": "PERIOD",
-            "reference_externe": "ORG_UNIT",
-            "data_element_id": "DX_UID",
-            "value": "VALUE",
-            "COC": "CATEGORY_OPTION_COMBO",
-        })
-
-        transformed_data = transformed_data.with_columns(pl.lit("DATA_ELEMENT").alias("DATA_TYPE"))
+        transformed_data = transformed_data.drop(
+            ["Calcul", "data_element", "CC", "export_id"]
+        )
+        transformed_data = transformed_data.rename(
+            {
+                "periode": "PERIOD",
+                "reference_externe": "ORG_UNIT",
+                "data_element_id": "DX_UID",
+                "value": "VALUE",
+                "COC": "CATEGORY_OPTION_COMBO",
+            }
+        )
 
         transformed_data = transformed_data.with_columns(
-            pl
-            .when(
-                pl.col("CATEGORY_OPTION_COMBO").is_null() | (pl.col("CATEGORY_OPTION_COMBO") == "")  # noqa: PLC1901
+            pl.lit("DATA_ELEMENT").alias("DATA_TYPE")
+        )
+
+        transformed_data = transformed_data.with_columns(
+            pl.when(
+                pl.col("CATEGORY_OPTION_COMBO").is_null()
+                | (pl.col("CATEGORY_OPTION_COMBO") == "")  # noqa: PLC1901
             )
             .then(pl.lit("HllvX50cXC0"))
             .otherwise(pl.col("CATEGORY_OPTION_COMBO"))
             .alias("CATEGORY_OPTION_COMBO")
         )
 
-        transformed_data = transformed_data.with_columns(pl.lit("HllvX50cXC0").alias("ATTRIBUTE_OPTION_COMBO"))
+        transformed_data = transformed_data.with_columns(
+            pl.lit("HllvX50cXC0").alias("ATTRIBUTE_OPTION_COMBO")
+        )
 
         current_period = int(datetime.now().strftime("%Y%m"))
         transformed_data = transformed_data.filter(pl.col("PERIOD") <= current_period)
         transformed_data = transformed_data.filter(
-            pl.col("ORG_UNIT").is_not_null() & (pl.col("ORG_UNIT").str.strip_chars() != "")  # noqa: PLC1901
+            pl.col("ORG_UNIT").is_not_null()
+            & (pl.col("ORG_UNIT").str.strip_chars() != "")  # noqa: PLC1901
         )
         # remove unmapped org units
-        transformed_data = transformed_data.filter(~pl.col("ORG_UNIT").str.starts_with("iaso#"))
-        transformed_data = transformed_data.filter(~pl.col("ORG_UNIT").str.starts_with("ssc"))
+        transformed_data = transformed_data.filter(
+            ~pl.col("ORG_UNIT").str.starts_with("iaso#")
+        )
+        transformed_data = transformed_data.filter(
+            ~pl.col("ORG_UNIT").str.starts_with("ssc")
+        )
         if transformed_data.is_empty():
             continue
 
         transformed_data = transformed_data.with_columns(
-            pl
-            .when(
+            pl.when(
                 pl.col("VALUE").is_null()
                 | (
-                    pl.col("VALUE").cast(pl.Utf8, strict=False).str.strip_chars() == "" # noqa
-                ) 
+                    pl.col("VALUE").cast(pl.Utf8, strict=False).str.strip_chars()
+                    == ""  # noqa
+                )
                 | (pl.col("VALUE").cast(pl.Float64, strict=False).is_nan())
             )
             .then(None)
@@ -728,53 +802,85 @@ def transform_data(  # noqa: D103
 
 def _process_columns(data: pl.DataFrame) -> pl.DataFrame:
     num = pl.Float64
-    data = data.with_columns([
-        (pl.col("amoxy_qc_moins_de_1an").cast(num) + pl.col("amoxy_qc_1an_a_5ans").cast(num)).alias("amoxy_qc_moins_de_1an_plus_amoxy_qc_1an_a_5ans"),
-        (pl.col("sro_qc").cast(num) / 2).alias("sro_qc_divide_2"),
-        (pl.col("sro_si").cast(num) / 2).alias("sro_si_divide_2"),
-        (pl.col("sro_sd").cast(num) / 2).alias("sro_sd_divide_2"),
-        (pl.col("sro_in").cast(num) / 2).alias("sro_in_divide_2"),
-        (pl.col("sro_jrs").cast(num) / 2).alias("sro_jrs_divide_2"),
-        (
-            pl.col("paracetamol_500mg_moins1_qc").cast(num)
-            + pl.col("paracetamol_500mg_1a3ans_qc").cast(num)
-            + pl.col("paracetamol_500mg_3ansplus_qc").cast(num)
-        ).alias("paracetamol_500mg_moins1_qc_plus_paracetamol_500mg_1a3ans_qc_plus_paracetamol_500mg_3ansplus_qc"),
-        (pl.col("casorientcs-5_f").cast(num) + pl.col("casorientcs-5_g").cast(num)).alias("casorientcs-5_f_plus_casorientcs-5_g"),
-        (pl.col("casorientcs5plus_f").cast(num) + pl.col("casorientcs5plus_g").cast(num)).alias("casorientcs5plus_f_plus_casorientcs5plus_g"),
-        (pl.col("cascontreorient-5_f").cast(num) + pl.col("cascontreorient-5_g").cast(num)).alias("cascontreorient-5_f_plus_cascontreorient-5_g"),
-        (pl.col("cascontreorient5plus_f").cast(num) + pl.col("cascontreorient5plus_g").cast(num)).alias(
-            "cascontreorient5plus_f_plus_cascontreorient5plus_g"
-        ),
-        (pl.col("casprestb-5_f").cast(num) + pl.col("casprestb-5_g").cast(num)).alias("casprestb-5_f_plus_casprestb-5_g"),
-        (pl.col("cassusppalugrav-5_f").cast(num) + pl.col("cassusppalugrav-5_g").cast(num)).alias("cassusppalugrav-5_f_plus_cassusppalugrav-5_g"),
-        (pl.col("cassusppalugrav5plus_f").cast(num) + pl.col("cassusppalugrav5plus_g").cast(num)).alias(
-            "cassusppalugrav5plus_f_plus_cassusppalugrav5plus_g"
-        ),
-        (pl.col("castbconfirm-5_f").cast(num) + pl.col("castbconfirm-5_g").cast(num)).alias("castbconfirm-5_f_plus_castbconfirm-5_g"),
-        (
-            pl.col("caseffetindes-5_f").cast(num)
-            + pl.col("caseffetindes-5_g").cast(num)
-            + pl.col("caseffetindes5plus_f").cast(num)
-            + pl.col("caseffetindes5plus_g").cast(num)
-        ).alias("caseffetindes-5_f_plus_caseffetindes-5_g_plus_caseffetindes5plus_f_plus_caseffetindes5plus_g"),
-        (
-            pl.col("pbrouge6-59_f").cast(num)
-            + pl.col("pbrouge6-59_g").cast(num)
-            + pl.col("pbjaune6-59_f").cast(num)
-            + pl.col("pbjaune6-59_g").cast(num)
-        ).alias("pbrouge6-59_f_plus_pbrouge6-59_g_plus_pbjaune6-59_f_plus_pbjaune6-59_g"),
-    ])
+    data = data.with_columns(
+        [
+            (
+                pl.col("amoxy_qc_moins_de_1an").cast(num)
+                + pl.col("amoxy_qc_1an_a_5ans").cast(num)
+            ).alias("amoxy_qc_moins_de_1an_plus_amoxy_qc_1an_a_5ans"),
+            (pl.col("sro_qc").cast(num) / 2).alias("sro_qc_divide_2"),
+            (pl.col("sro_si").cast(num) / 2).alias("sro_si_divide_2"),
+            (pl.col("sro_sd").cast(num) / 2).alias("sro_sd_divide_2"),
+            (pl.col("sro_in").cast(num) / 2).alias("sro_in_divide_2"),
+            (pl.col("sro_jrs").cast(num) / 2).alias("sro_jrs_divide_2"),
+            (
+                pl.col("paracetamol_500mg_moins1_qc").cast(num)
+                + pl.col("paracetamol_500mg_1a3ans_qc").cast(num)
+                + pl.col("paracetamol_500mg_3ansplus_qc").cast(num)
+            ).alias(
+                "paracetamol_500mg_moins1_qc_plus_paracetamol_500mg_1a3ans_qc_plus_paracetamol_500mg_3ansplus_qc"
+            ),
+            (
+                pl.col("casorientcs-5_f").cast(num)
+                + pl.col("casorientcs-5_g").cast(num)
+            ).alias("casorientcs-5_f_plus_casorientcs-5_g"),
+            (
+                pl.col("casorientcs5plus_f").cast(num)
+                + pl.col("casorientcs5plus_g").cast(num)
+            ).alias("casorientcs5plus_f_plus_casorientcs5plus_g"),
+            (
+                pl.col("cascontreorient-5_f").cast(num)
+                + pl.col("cascontreorient-5_g").cast(num)
+            ).alias("cascontreorient-5_f_plus_cascontreorient-5_g"),
+            (
+                pl.col("cascontreorient5plus_f").cast(num)
+                + pl.col("cascontreorient5plus_g").cast(num)
+            ).alias("cascontreorient5plus_f_plus_cascontreorient5plus_g"),
+            (
+                pl.col("casprestb-5_f").cast(num) + pl.col("casprestb-5_g").cast(num)
+            ).alias("casprestb-5_f_plus_casprestb-5_g"),
+            (
+                pl.col("cassusppalugrav-5_f").cast(num)
+                + pl.col("cassusppalugrav-5_g").cast(num)
+            ).alias("cassusppalugrav-5_f_plus_cassusppalugrav-5_g"),
+            (
+                pl.col("cassusppalugrav5plus_f").cast(num)
+                + pl.col("cassusppalugrav5plus_g").cast(num)
+            ).alias("cassusppalugrav5plus_f_plus_cassusppalugrav5plus_g"),
+            (
+                pl.col("castbconfirm-5_f").cast(num)
+                + pl.col("castbconfirm-5_g").cast(num)
+            ).alias("castbconfirm-5_f_plus_castbconfirm-5_g"),
+            (
+                pl.col("caseffetindes-5_f").cast(num)
+                + pl.col("caseffetindes-5_g").cast(num)
+                + pl.col("caseffetindes5plus_f").cast(num)
+                + pl.col("caseffetindes5plus_g").cast(num)
+            ).alias(
+                "caseffetindes-5_f_plus_caseffetindes-5_g_plus_caseffetindes5plus_f_plus_caseffetindes5plus_g"
+            ),
+            (
+                pl.col("pbrouge6-59_f").cast(num)
+                + pl.col("pbrouge6-59_g").cast(num)
+                + pl.col("pbjaune6-59_f").cast(num)
+                + pl.col("pbjaune6-59_g").cast(num)
+            ).alias(
+                "pbrouge6-59_f_plus_pbrouge6-59_g_plus_pbjaune6-59_f_plus_pbjaune6-59_g"
+            ),
+        ]
+    )
 
-    return data.with_columns([
-        yes_no_to_int("minuteur_ari", "count yes minuteur_ari"),
-        yes_no_to_int("minuteur_ari", "count yes minuteur_ari 2"),
-        yes_no_to_int("muac", "count yes muac"),
-        yes_no_to_int("muac", "count yes muac 2"),
-        yes_no_to_int("poubelle_recep", "count yes poubelle_recep"),
-        yes_no_to_int("caissemedexiste", "count yes caissemedexiste"),
-        yes_no_to_int("caissesecure", "count yes caissesecure"),
-    ])
+    return data.with_columns(
+        [
+            yes_no_to_int("minuteur_ari", "count yes minuteur_ari"),
+            yes_no_to_int("minuteur_ari", "count yes minuteur_ari 2"),
+            yes_no_to_int("muac", "count yes muac"),
+            yes_no_to_int("muac", "count yes muac 2"),
+            yes_no_to_int("poubelle_recep", "count yes poubelle_recep"),
+            yes_no_to_int("caissemedexiste", "count yes caissemedexiste"),
+            yes_no_to_int("caissesecure", "count yes caissesecure"),
+        ]
+    )
 
 
 def authenticate_iaso(conn: IASOConnection) -> IASO:
@@ -811,7 +917,9 @@ def get_form_name(iaso_connection: IASO, form_id: int) -> str:
     """
     iaso = authenticate_iaso(iaso_connection)
     try:
-        response = iaso.api_client.get(f"/api/forms/{form_id}", params={"fields": {"name"}})
+        response = iaso.api_client.get(
+            f"/api/forms/{form_id}", params={"fields": {"name"}}
+        )
         return clean_string(response.json().get("name"))
     except Exception as e:
         current_run.log_error(f"Form fetch failed: {e}")
@@ -840,7 +948,9 @@ def parse_cutoff_date(date_str: str | None) -> str | None:
         raise ValueError("Invalid date format") from exc
 
 
-def fetch_submissions(periods_from_last_update: list | None, iaso: IASO, form_id: int, period_to_run: int) -> pl.DataFrame:
+def fetch_submissions(
+    periods_from_last_update: list | None, iaso: IASO, form_id: int, period_to_run: int
+) -> pl.DataFrame:
     """Retrieve form submissions from IASO API.
 
     Args:
@@ -857,7 +967,9 @@ def fetch_submissions(periods_from_last_update: list | None, iaso: IASO, form_id
 
         # Case 1: Single period override
         if period_to_run:
-            current_run.log_info(f"Extracting data related to period {period_to_run} only")
+            current_run.log_info(
+                f"Extracting data related to period {period_to_run} only"
+            )
             csv = get_instances_csv_with_periods(
                 iaso,
                 form_id,
@@ -874,7 +986,9 @@ def fetch_submissions(periods_from_last_update: list | None, iaso: IASO, form_id
 
         # Case 2: Multiple periods (incremental backfill)
         elif periods_from_last_update:
-            current_run.log_info(f"Extracting data for periods: {periods_from_last_update}")
+            current_run.log_info(
+                f"Extracting data for periods: {periods_from_last_update}"
+            )
 
             dfs = []
 
@@ -962,7 +1076,9 @@ def get_instances_csv_with_periods(
     return r.content.decode("utf8")
 
 
-def process_choices(submissions: pl.DataFrame, convert: bool, iaso_client: IASO, form_id: int) -> pl.DataFrame:
+def process_choices(
+    submissions: pl.DataFrame, convert: bool, iaso_client: IASO, form_id: int
+) -> pl.DataFrame:
     """Convert choice codes to human-readable labels if requested.
 
     Args:
@@ -979,7 +1095,9 @@ def process_choices(submissions: pl.DataFrame, convert: bool, iaso_client: IASO,
 
     try:
         form_metadata = dataframe.get_form_metadata(iaso_client, form_id)
-        return dataframe.replace_labels(submissions=submissions, form_metadata=form_metadata, language="French")
+        return dataframe.replace_labels(
+            submissions=submissions, form_metadata=form_metadata, language="French"
+        )
     except Exception as exc:
         current_run.log_error(f"Choice conversion failed: {exc}")
         raise
@@ -995,7 +1113,11 @@ def deduplicate_columns(submissions: pl.DataFrame) -> pl.DataFrame:
         pl.DataFrame: DataFrame with unique column names.
     """
     cleaned_columns = [clean_string(col) for col in submissions.columns]
-    duplicates_columns = {k: list(range(1, cleaned_columns.count(k) + 1)) for k in cleaned_columns if cleaned_columns.count(k) != 1}
+    duplicates_columns = {
+        k: list(range(1, cleaned_columns.count(k) + 1))
+        for k in cleaned_columns
+        if cleaned_columns.count(k) != 1
+    }
     for col in cleaned_columns[:]:  # Iterate over a copy of the list
         if col in duplicates_columns:
             index = cleaned_columns.index(col)
@@ -1050,7 +1172,9 @@ def export_to_file(
                         output_file_path, index=False
                     )
             else:
-                current_run.log_info(f"Period {period} cannot be exported to {stage} file because it is empty.")
+                current_run.log_info(
+                    f"Period {period} cannot be exported to {stage} file because it is empty."
+                )
                 continue
 
             fpath = output_file_path.as_posix()
@@ -1074,7 +1198,9 @@ def export_to_file(
             fpath = output_file_path.as_posix()
             current_run.add_file_output(fpath)
         else:
-            current_run.log_info(f"Period {period} cannot be exported to {stage} file because it is empty.")
+            current_run.log_info(
+                f"Period {period} cannot be exported to {stage} file because it is empty."
+            )
     return output_file_path
 
 
@@ -1100,7 +1226,7 @@ def post_to_dhis2(
         # NOTE: This "rejected_datapoints" is a list of data points causing errors in DHIS2.
         # This list of points can be used to clean the imported/ dataframe record per period.
         # Loop over elements in here:
-        error_dp = pusher.summary["rejected_datapoints"]
+        error_dp = pusher.push_summary.get("rejected_datapoints", 0)
 
         if error_dp and len(error_dp) > 0:
             current_run.log_info(f"Rejected data ponts are {error_dp}")
@@ -1130,7 +1256,9 @@ def prepare_data_value_payload(data_values: pl.DataFrame) -> pl.DataFrame:
     }
 
     # Check for required columns
-    missing_columns = [col for col in mapping_toolbox_dhis2_name if col not in data_values.columns]
+    missing_columns = [
+        col for col in mapping_toolbox_dhis2_name if col not in data_values.columns
+    ]
     if missing_columns:
         current_run.log_error(f"Missing required columns: {missing_columns}")
         raise ValueError(f"Missing required columns: {missing_columns}")
@@ -1149,21 +1277,33 @@ def _process_submissions(submissions: pl.DataFrame) -> pl.DataFrame:
 
     binary_exprs = []
     for col in list_cols:
-        unique_cats = submissions[col].drop_nulls().explode().drop_nulls().unique().to_list()
+        unique_cats = (
+            submissions[col].drop_nulls().explode().drop_nulls().unique().to_list()
+        )
 
         for cat in unique_cats:
-            expr = pl.col(col).list.contains(cat).fill_null(False).cast(pl.Int8).alias(f"{col}_{clean_string(cat)}")
+            expr = (
+                pl.col(col)
+                .list.contains(cat)
+                .fill_null(False)
+                .cast(pl.Int8)
+                .alias(f"{col}_{clean_string(cat)}")
+            )
             binary_exprs.append(expr)
 
     if binary_exprs:
         submissions = submissions.with_columns(binary_exprs)
 
-    submissions = submissions.drop(list_cols).select(pl.exclude("instanceid"), pl.col("instanceid"))
+    submissions = submissions.drop(list_cols).select(
+        pl.exclude("instanceid"), pl.col("instanceid")
+    )
 
     return submissions.select(sorted(submissions.columns)).sort(submissions.columns)
 
 
-def _generate_output_file_path(form_name: str, output_file_name: str, output_format: str) -> Path:
+def _generate_output_file_path(
+    form_name: str, output_file_name: str, output_format: str
+) -> Path:
     """Generate the output file path based on provided parameters.
 
     Args:
@@ -1181,7 +1321,9 @@ def _generate_output_file_path(form_name: str, output_file_name: str, output_for
             output_file_path = output_file_path.with_suffix(output_format)
 
         if output_file_path.suffix not in [".csv", ".parquet", ".xlsx"]:
-            current_run.log_error(f"Unsupported output format: {output_file_path.suffix}. Supported formats are: .csv, .parquet, .xlsx")
+            current_run.log_error(
+                f"Unsupported output format: {output_file_path.suffix}. Supported formats are: .csv, .parquet, .xlsx"
+            )
             raise ValueError(f"Unsupported output format: {output_file_path.suffix}")
 
         if not output_file_path.is_absolute():

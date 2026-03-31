@@ -29,6 +29,7 @@ class DHIS2Pusher:
         self.dry_run = dry_run
         self.max_post = max_post
         self.logger = logger if logger else logging.getLogger(__name__)
+        self.push_summary = {}
 
     def push_data(
         self,
@@ -79,6 +80,7 @@ class DHIS2Pusher:
         current_run.log_info(msg)
         self.logger.info(msg)
         self._log_summary_errors(summary)
+        self.push_summary = summary
 
     def _push_removals(self, data_points_to_remove: pd.DataFrame) -> None:
         if len(data_points_to_remove) == 0:
