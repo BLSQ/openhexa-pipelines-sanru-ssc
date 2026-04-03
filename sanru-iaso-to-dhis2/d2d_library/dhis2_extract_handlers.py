@@ -13,7 +13,12 @@ class DataElementsExtractor:
         self.extractor = extractor
 
     def download_period(
-        self, data_elements: list[str], org_units: list[str], period: str, output_dir: Path, filename: str | None = None
+        self,
+        data_elements: list[str],
+        org_units: list[str],
+        period: str,
+        output_dir: Path,
+        filename: str | None = None,
     ) -> Path | None:
         """Download and handle data extracts for the specified period, saving them to the output directory.
 
@@ -41,7 +46,9 @@ class DataElementsExtractor:
             If an error occurs during the extract process.
         """
         try:
-            current_run.log_info(f"Retrieving data elements extract for period : {period}")
+            current_run.log_info(
+                f"Retrieving data elements extract for period : {period}"
+            )
             return self.extractor._handle_extract_for_period(
                 handler=self,
                 data_products=data_elements,
@@ -53,7 +60,9 @@ class DataElementsExtractor:
         except Exception as e:
             raise Exception(f"Extract data elements download error : {e}") from e
 
-    def _retrieve_data(self, data_elements: list[str], org_units: list[str], period: str) -> pd.DataFrame:
+    def _retrieve_data(
+        self, data_elements: list[str], org_units: list[str], period: str
+    ) -> pd.DataFrame:
         if not self.extractor._valid_dhis2_period_format(period):
             raise ValueError(f"Invalid DHIS2 period format: {period}")
         try:
@@ -66,7 +75,9 @@ class DataElementsExtractor:
         except Exception as e:
             raise Exception(f"Error retrieving data elements data: {e}") from e
 
-        return self.extractor._map_to_dhis2_format(pd.DataFrame(response), data_type="DATA_ELEMENT")
+        return self.extractor._map_to_dhis2_format(
+            pd.DataFrame(response), data_type="DATA_ELEMENT"
+        )
 
 
 class IndicatorsExtractor:
@@ -76,7 +87,12 @@ class IndicatorsExtractor:
         self.extractor = extractor
 
     def download_period(
-        self, indicators: list[str], org_units: list[str], period: str, output_dir: Path, filename: str | None = None
+        self,
+        indicators: list[str],
+        org_units: list[str],
+        period: str,
+        output_dir: Path,
+        filename: str | None = None,
     ) -> Path | None:
         """Download and handle data extracts for the specified periods, saving them to the output directory.
 
@@ -116,7 +132,9 @@ class IndicatorsExtractor:
         except Exception as e:
             raise Exception(f"Extract indicators download error : {e}") from e
 
-    def _retrieve_data(self, indicators: list[str], org_units: list[str], period: str) -> pd.DataFrame:
+    def _retrieve_data(
+        self, indicators: list[str], org_units: list[str], period: str
+    ) -> pd.DataFrame:
         if not self.extractor._valid_dhis2_period_format(period):
             raise ValueError(f"Invalid DHIS2 period format: {period}")
         try:
@@ -129,8 +147,12 @@ class IndicatorsExtractor:
         except Exception as e:
             raise Exception(f"Error retrieving indicators data: {e}") from e
 
-        raw_data_formatted = pd.DataFrame(response).rename(columns={"pe": "period", "ou": "orgUnit"})
-        return self.extractor._map_to_dhis2_format(raw_data_formatted, data_type="INDICATOR")
+        raw_data_formatted = pd.DataFrame(response).rename(
+            columns={"pe": "period", "ou": "orgUnit"}
+        )
+        return self.extractor._map_to_dhis2_format(
+            raw_data_formatted, data_type="INDICATOR"
+        )
 
 
 class ReportingRatesExtractor:
@@ -173,7 +195,9 @@ class ReportingRatesExtractor:
             If an error occurs during the extract process.
         """
         try:
-            current_run.log_info(f"Retrieving reporting rates extract for period : {period}")
+            current_run.log_info(
+                f"Retrieving reporting rates extract for period : {period}"
+            )
             return self.extractor._handle_extract_for_period(
                 handler=self,
                 data_products=reporting_rates,
@@ -185,7 +209,9 @@ class ReportingRatesExtractor:
         except Exception as e:
             raise Exception(f"Extract reporting rates download error : {e}") from e
 
-    def _retrieve_data(self, reporting_rates: list[str], org_units: list[str], period: str) -> pd.DataFrame:
+    def _retrieve_data(
+        self, reporting_rates: list[str], org_units: list[str], period: str
+    ) -> pd.DataFrame:
         if not self.extractor._valid_dhis2_period_format(period):
             raise ValueError(f"Invalid DHIS2 period format: {period}")
         try:
@@ -198,8 +224,12 @@ class ReportingRatesExtractor:
         except Exception as e:
             raise Exception(f"Error retrieving reporting rates data: {e}") from e
 
-        raw_data_formatted = pd.DataFrame(response).rename(columns={"pe": "period", "ou": "orgUnit"})
-        return self.extractor._map_to_dhis2_format(raw_data_formatted, data_type="REPORTING_RATE")
+        raw_data_formatted = pd.DataFrame(response).rename(
+            columns={"pe": "period", "ou": "orgUnit"}
+        )
+        return self.extractor._map_to_dhis2_format(
+            raw_data_formatted, data_type="REPORTING_RATE"
+        )
 
 
 class DHIS2Extractor:
@@ -232,11 +262,16 @@ class DHIS2Extractor:
     """
 
     def __init__(
-        self, dhis2_client: DHIS2, download_mode: str = "DOWNLOAD_REPLACE", return_existing_file: bool = False
+        self,
+        dhis2_client: DHIS2,
+        download_mode: str = "DOWNLOAD_REPLACE",
+        return_existing_file: bool = False,
     ):
         self.dhis2_client = dhis2_client
         if download_mode not in {"DOWNLOAD_REPLACE", "DOWNLOAD_NEW"}:
-            raise ValueError("Invalid 'download_mode', use 'DOWNLOAD_REPLACE' or 'DOWNLOAD_NEW'.")
+            raise ValueError(
+                "Invalid 'download_mode', use 'DOWNLOAD_REPLACE' or 'DOWNLOAD_NEW'."
+            )
         self.download_mode = download_mode
         self.last_updated = None  # NOTE: Placeholder for future use
         self.data_elements = DataElementsExtractor(self)
@@ -261,7 +296,9 @@ class DHIS2Extractor:
 
         # Skip if already exists and mode is DOWNLOAD_NEW
         if self.download_mode == "DOWNLOAD_NEW" and extract_fname.exists():
-            current_run.log_info(f"Extract for period {period} already exists, download skipped.")
+            current_run.log_info(
+                f"Extract for period {period} already exists, download skipped."
+            )
             return extract_fname if self.return_existing_file else None
 
         raw_data = handler._retrieve_data(data_products, org_units, period)
@@ -318,7 +355,9 @@ class DHIS2Extractor:
             return None
 
         if data_type not in ["DATA_ELEMENT", "REPORTING_RATE", "INDICATOR"]:
-            raise ValueError("Incorrect 'data_type' configuration ('DATA_ELEMENT', 'REPORTING_RATE', 'INDICATOR').")
+            raise ValueError(
+                "Incorrect 'data_type' configuration ('DATA_ELEMENT', 'REPORTING_RATE', 'INDICATOR')."
+            )
 
         try:
             data_format = pd.DataFrame(
@@ -344,15 +383,21 @@ class DHIS2Extractor:
                 data_format["CATEGORY_OPTION_COMBO"] = dhis_data.categoryOptionCombo
                 data_format["ATTRIBUTE_OPTION_COMBO"] = dhis_data.attributeOptionCombo
             elif data_type == "REPORTING_RATE":
-                data_format[["DX_UID", "RATE_TYPE"]] = dhis_data.dx.str.split(".", expand=True)
+                data_format[["DX_UID", "RATE_TYPE"]] = dhis_data.dx.str.split(
+                    ".", expand=True
+                )
             elif data_type == "INDICATOR":
                 data_format["DX_UID"] = dhis_data.dx
             return data_format
 
         except AttributeError as e:
-            raise AttributeError(f"missing extract data, required attribute for format: {e}") from e
+            raise AttributeError(
+                f"missing extract data, required attribute for format: {e}"
+            ) from e
         except Exception as e:
-            raise Exception(f"Unexpected Error while creating extract format table: {e}") from e
+            raise Exception(
+                f"Unexpected Error while creating extract format table: {e}"
+            ) from e
 
     def _valid_dhis2_period_format(self, dhis2_period: str) -> bool:
         """Validate if the given period string is in a valid DHIS2 format.
@@ -378,7 +423,9 @@ class DHIS2Extractor:
                 raise TypeError("The 'data' parameter must be a pandas DataFrame.")
 
             # Write to a temporary file in the same directory
-            with tempfile.NamedTemporaryFile(suffix=".parquet", dir=filename.parent, delete=False) as tmp_file:
+            with tempfile.NamedTemporaryFile(
+                suffix=".parquet", dir=filename.parent, delete=False
+            ) as tmp_file:
                 temp_filename = Path(tmp_file.name)
                 data.to_parquet(temp_filename, engine="pyarrow", index=False)
 

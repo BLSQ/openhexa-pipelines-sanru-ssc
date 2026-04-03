@@ -39,11 +39,15 @@ class DHIS2PyramidAligner:
         """Syncs the extracted pyramid data with the target DHIS2 instance."""
         # Load the target pyramid
         if source_pyramid.empty:
-            current_run.log_warning("Source pyramid is empty. Organisation units alignment skipped.")
+            current_run.log_warning(
+                "Source pyramid is empty. Organisation units alignment skipped."
+            )
             return
 
         current_run.log_debug(f"Shape source pyramid: {source_pyramid.shape}")
-        current_run.log_info(f"Retrieving organisation units from target DHIS2: {target_dhis2.api.url}")
+        current_run.log_info(
+            f"Retrieving organisation units from target DHIS2: {target_dhis2.api.url}"
+        )
         # Retrieve all organisation units from the target DHIS2
         target_pyramid = target_dhis2.meta.organisation_units(
             fields="id,name,shortName,openingDate,closedDate,parent,level,path,geometry"
@@ -62,7 +66,9 @@ class DHIS2PyramidAligner:
         )
 
         # Select matching OU: all OU uid that match between DHIS2 source and target (set intersection)
-        matching_ou_ids = list(set(source_pyramid.id).intersection(set(target_pyramid.id)))
+        matching_ou_ids = list(
+            set(source_pyramid.id).intersection(set(target_pyramid.id))
+        )
         self._push_org_units_update(
             org_unit_source=source_pyramid,
             org_unit_target=target_pyramid,
@@ -72,7 +78,9 @@ class DHIS2PyramidAligner:
         )
         current_run.log_info("Organisation units push finished.")
 
-    def _push_org_units_create(self, ou_to_create: pd.DataFrame, target_dhis2: DHIS2, dry_run: bool) -> None:
+    def _push_org_units_create(
+        self, ou_to_create: pd.DataFrame, target_dhis2: DHIS2, dry_run: bool
+    ) -> None:
         """Create organisation units in the target DHIS2 instance.
 
         Parameters
@@ -98,7 +106,9 @@ class DHIS2PyramidAligner:
             # NOTE: Geometry is valid for versions > 2.32
             if target_dhis2.version <= "2.32":
                 ou_to_create["geometry"] = None
-                current_run.log_warning("DHIS2 version not compatible with geometry. Geometry will not be pushed.")
+                current_run.log_warning(
+                    "DHIS2 version not compatible with geometry. Geometry will not be pushed."
+                )
 
             current_run.log_info(f"Creating {len(ou_to_create)} organisation units.")
             errors_count = 0
@@ -136,7 +146,9 @@ class DHIS2PyramidAligner:
                 )
 
         except Exception as e:
-            raise Exception(f"Unexpected error occurred while creating organisation units. Error: {e}") from e
+            raise Exception(
+                f"Unexpected error occurred while creating organisation units. Error: {e}"
+            ) from e
 
     def _push_org_units_update(
         self,
@@ -152,15 +164,21 @@ class DHIS2PyramidAligner:
             return
 
         try:
-            current_run.log_info(f"Checking for updates in {len(ou_ids_to_check)} organisation units.")
+            current_run.log_info(
+                f"Checking for updates in {len(ou_ids_to_check)} organisation units."
+            )
             # NOTE: Geometry is valid for versions > 2.32
             if target_dhis2.version <= "2.32":
                 org_unit_source["geometry"] = None
                 org_unit_target["geometry"] = None
-                current_run.log_warning("DHIS2 version not compatible with geometry. Geometry will be ignored.")
+                current_run.log_warning(
+                    "DHIS2 version not compatible with geometry. Geometry will be ignored."
+                )
 
             # build id dictionary (faster) to compare source vs target OU
-            index_dictionary = self._build_id_indexes(org_unit_source, org_unit_target, ou_ids_to_check)
+            index_dictionary = self._build_id_indexes(
+                org_unit_source, org_unit_target, ou_ids_to_check
+            )
 
             errors_count = 0
             updates_count = 0
@@ -188,7 +206,9 @@ class DHIS2PyramidAligner:
                     self.logger.info(str(response))
 
                 if progress_count % 5000 == 0:
-                    current_run.log_info(f"Organisation units checked: {progress_count}/{len(ou_ids_to_check)}")
+                    current_run.log_info(
+                        f"Organisation units checked: {progress_count}/{len(ou_ids_to_check)}"
+                    )
 
             current_run.log_info(f"Organisation units updated: {updates_count}")
             if errors_count > 0:
@@ -196,7 +216,9 @@ class DHIS2PyramidAligner:
                     f"{errors_count} errors occurred during OU update. Please check the latest execution logs."
                 )
         except Exception as e:
-            raise Exception(f"Unexpected error occurred while updating organisation units. Error: {e}") from e
+            raise Exception(
+                f"Unexpected error occurred while updating organisation units. Error: {e}"
+            ) from e
 
     def _push_org_unit(
         self,
@@ -248,9 +270,13 @@ class DHIS2PyramidAligner:
                 params={"dryRun": dry_run, "importStrategy": f"{strategy}"},
             )
 
-        return self._build_formatted_response(response=r, strategy=strategy, ou_id=org_unit.id)
+        return self._build_formatted_response(
+            response=r, strategy=strategy, ou_id=org_unit.id
+        )
 
-    def _build_formatted_response(self, response: requests.Response, strategy: str, ou_id: str) -> dict:
+    def _build_formatted_response(
+        self, response: requests.Response, strategy: str, ou_id: str
+    ) -> dict:
         """Build a formatted response dictionary from a requests.Response object.
 
         Parameters
@@ -275,7 +301,9 @@ class DHIS2PyramidAligner:
             "ou_id": ou_id,
         }
 
-    def _build_id_indexes(self, ou_source: pd.DataFrame, ou_target: pd.DataFrame, ou_matching_ids: list) -> dict:
+    def _build_id_indexes(
+        self, ou_source: pd.DataFrame, ou_target: pd.DataFrame, ou_matching_ids: list
+    ) -> dict:
         """Build a dictionary mapping matching OU IDs to their index positions in source and target DataFrames.
 
         Parameters
